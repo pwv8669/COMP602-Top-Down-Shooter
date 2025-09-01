@@ -16,5 +16,5 @@ public class CameraMovement : MonoBehaviour
         transform.position = smoothedPosition;
         transform.LookAt(playerTarget);
     }
-}
+} 
 
