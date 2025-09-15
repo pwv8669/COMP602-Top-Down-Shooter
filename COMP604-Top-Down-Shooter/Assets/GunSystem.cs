@@ -103,6 +103,7 @@ public class GunSystem : MonoBehaviour
             if (Physics.Raycast(transform.position, direction, out RaycastHit enemyHit, range, targetMask))
             {
                 // TODO: Step 6: Apply damage if hit enemy
+                Debug.Log("Hit: " + enemyHit.collider.name);
             }
 
             // Ammo 
