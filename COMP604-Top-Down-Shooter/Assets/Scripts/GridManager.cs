@@ -13,6 +13,7 @@ public class GridManager : MonoBehaviour
     public int gridHeight = 20;
     public int numberOfWalkers = 1;
     public int walkerLifetime = 50;
+    public int location = 1;
     private List<HallwayWalker> walkers;
 
     public MapGenerator mapGenerator;
@@ -29,39 +30,86 @@ public class GridManager : MonoBehaviour
     [ContextMenu("Generate Hallways")]
     void GenerateHallways()
     {
-        walkers = new List<HallwayWalker>();
-
-        // Create and initialize walkers
-        for (int i = 0; i < numberOfWalkers; i++)
+        switch (location)
         {
-            // Start each walker at the center of the grid
-            Vector2Int startPosition = new Vector2Int(gridWidth / 2, gridHeight / 2);
+            case 2:
+                // Three random rows and columns
+                int[] randomRows = new int[3];
+                randomRows[0] = 10;
+                randomRows[1] = Random.Range(3, gridWidth - 3);
+                randomRows[2] = Random.Range(3, gridWidth - 3);
 
-            HallwayWalker newWalker = new HallwayWalker(startPosition, this);
-            walkers.Add(newWalker);
+                int[] randomColumns = new int[3];
+                randomColumns[0] = Random.Range(3, gridHeight - 3);
+                randomColumns[1] = Random.Range(3, gridHeight - 3);
+                randomColumns[2] = Random.Range(3, gridHeight - 3);
 
-            // Mark starting cell
-            grid[startPosition.x, startPosition.y] = CellState.Hallway;
-        }
-
-        // Run the simulation
-        for (int i = 0; i < walkerLifetime; i++)
-        {
-            foreach (HallwayWalker walker in walkers)
-            {
-                Vector2Int newPos = walker.Move();
-
-                // Update the grid based on walker's new position
-                // Check if cell is already a hallway
-                if (grid[newPos.x, newPos.y] == CellState.Hallway)
+                // Fill entire rows
+                for (int i = 0; i < randomRows.Length; i++)
                 {
-                    grid[newPos.x, newPos.y] = CellState.Intersection;
+                    int y = Mathf.Clamp(randomRows[i], 0, gridHeight - 1);
+                    for (int x = Random.Range(0, 2); x < Random.Range(gridWidth - 4, gridWidth - 2); x++)
+                    {
+                        var state = grid[x, y];
+                        if (state == CellState.Empty)
+                            grid[x, y] = CellState.Hallway;
+                        else if (state == CellState.Hallway)
+                            grid[x, y] = CellState.Intersection;
+                    }
                 }
-                else
+
+                // Fill entire columns
+                for (int i = 0; i < randomColumns.Length; i++)
                 {
-                    grid[newPos.x, newPos.y] = CellState.Hallway;
+                    int x = Mathf.Clamp(randomColumns[i], 0, gridWidth - 1);
+                    for (int y = Random.Range(0, 2); y < Random.Range(gridHeight - 4, gridHeight - 2); y++)
+                    {
+                        var state = grid[x, y];
+                        if (state == CellState.Empty)
+                            grid[x, y] = CellState.Hallway;
+                        else if (state == CellState.Hallway)
+                            grid[x, y] = CellState.Intersection;
+                    }
                 }
-            }
+                break;
+
+            case 1:
+            default:
+                walkers = new List<HallwayWalker>();
+
+                // Create and initialize walkers
+                for (int i = 0; i < numberOfWalkers; i++)
+                {
+                    // Start each walker at the center of the grid
+                    Vector2Int startPosition = new Vector2Int(gridWidth / 2, gridHeight / 2);
+
+                    HallwayWalker newWalker = new HallwayWalker(startPosition, this);
+                    walkers.Add(newWalker);
+
+                    // Mark starting cell
+                    grid[startPosition.x, startPosition.y] = CellState.Hallway;
+                }
+
+                // Run the simulation
+                for (int i = 0; i < walkerLifetime; i++)
+                {
+                    foreach (HallwayWalker walker in walkers)
+                    {
+                        Vector2Int newPos = walker.Move();
+
+                        // Update the grid based on walker's new position
+                        // Check if cell is already a hallway
+                        if (grid[newPos.x, newPos.y] == CellState.Hallway)
+                        {
+                            grid[newPos.x, newPos.y] = CellState.Intersection;
+                        }
+                        else
+                        {
+                            grid[newPos.x, newPos.y] = CellState.Hallway;
+                        }
+                    }
+                }
+                break;
         }
 
         mapGenerator.GenerateMap();
