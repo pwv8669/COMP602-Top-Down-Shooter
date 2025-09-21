@@ -9,6 +9,7 @@ public class MapGenerator : MonoBehaviour
     public GameObject floorPrefab;
     public GameObject grassPrefab;
     public GameObject wallPrefab;
+    public GameObject minimapPrefab;
 
     public void GenerateMap()
     {
@@ -66,6 +67,12 @@ public class MapGenerator : MonoBehaviour
                 Instantiate(grassPrefab, tilePosition, Quaternion.identity, this.transform);
             else
                 Instantiate(floorPrefab, tilePosition, Quaternion.identity, this.transform);
+        }
+        // Place the minimap prefab slightly below the tile
+        if (minimapPrefab != null)
+        {
+            Vector3 minimapPosition = tilePosition + new Vector3(0, -10, 0);
+            Instantiate(minimapPrefab, minimapPosition, Quaternion.identity, this.transform);
         }
 
         // Check for empty neighbors to place walls
