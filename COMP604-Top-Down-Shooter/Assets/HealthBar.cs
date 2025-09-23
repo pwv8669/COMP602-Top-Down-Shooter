@@ -12,25 +12,14 @@ public class HealthBar : MonoBehaviour
 
     private void Start()
     {
-        // Fading functionality
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
         {
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // TEMPORARY: ALWAYS SHOW FOR TESTING
-        canvasGroup.alpha = 1; // Force visible regardless of settings
-        
-        // Comment out the original logic for now:
-        // if (showOnlyWhenDamaged && !isPlayerHealthBar)
-        // {
-        //     canvasGroup.alpha = 0;
-        // }
-        // else
-        // {
-        //     canvasGroup.alpha = 1;
-        // }
+        // TEMPORARY: FORCE VISIBLE FOR TESTING
+        canvasGroup.alpha = 1; // Always show, regardless of settings
 
         if (health != null)
         {
@@ -40,7 +29,7 @@ public class HealthBar : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Health component not assigned to HealthBar on " + gameObject.name);
+            Debug.LogError("Health component not found on " + gameObject.name);
         }
     }
 
