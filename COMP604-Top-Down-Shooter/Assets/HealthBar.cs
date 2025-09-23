@@ -19,25 +19,29 @@ public class HealthBar : MonoBehaviour
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // Hide enemy health bars initially if configured to show only when damaged
-        if (showOnlyWhenDamaged && !isPlayerHealthBar)
-        {
-            canvasGroup.alpha = 0;
-        }
-        else
-        {
-            canvasGroup.alpha = 1;
-        }
+        // TEMPORARY: ALWAYS SHOW FOR TESTING
+        canvasGroup.alpha = 1; // Force visible regardless of settings
+        
+        // Comment out the original logic for now:
+        // if (showOnlyWhenDamaged && !isPlayerHealthBar)
+        // {
+        //     canvasGroup.alpha = 0;
+        // }
+        // else
+        // {
+        //     canvasGroup.alpha = 1;
+        // }
 
         if (health != null)
         {
             health.OnHealthChanged.AddListener(UpdateHealthBar);
             health.OnDied.AddListener(OnEntityDied);
-        }
-
-        // Initialise health bar
-        if (health != null)
             UpdateHealthBar(health.CurrentHealth);
+        }
+        else
+        {
+            Debug.LogError("Health component not assigned to HealthBar on " + gameObject.name);
+        }
     }
 
     private void UpdateHealthBar(int currentHealth)
