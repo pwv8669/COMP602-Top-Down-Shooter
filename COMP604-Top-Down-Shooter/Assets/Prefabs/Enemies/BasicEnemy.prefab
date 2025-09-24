@@ -222,10 +222,10 @@ GameObject:
   - component: {fileID: 4089437465040260818}
   - component: {fileID: 2650001944995428167}
   - component: {fileID: 3835618766376456729}
-  - component: {fileID: 4499912103348735857}
   - component: {fileID: 2857975363590312874}
   - component: {fileID: 3440913722874191479}
-  m_Layer: 0
+  - component: {fileID: 7011753817900052634}
+  m_Layer: 8
   m_Name: BasicEnemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -368,18 +368,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   maxHealth: 100
---- !u!114 &4499912103348735857
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4666694918993954263}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1326368af48ad40d4b3cc8d345325955, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &2857975363590312874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -408,6 +396,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a5547f6f72ed4d8caf3434f1fe6851b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7011753817900052634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4666694918993954263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 720322e7f6d0941178259f8b4600f347, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damage: 10
+  attackRange: 2
+  attackCooldown: 1
 --- !u!1 &8850642975491369349
 GameObject:
   m_ObjectHideFlags: 0
