@@ -18,9 +18,9 @@ public class HealthBar : MonoBehaviour
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // TEMPORARY: FORCE VISIBLE FOR TESTING
-        canvasGroup.alpha = 1; // Always show, regardless of settings
-
+        // Initialize with correct visibility
+        InitializeHealthBarVisibility();
+        
         if (health != null)
         {
             health.OnHealthChanged.AddListener(UpdateHealthBar);
@@ -30,6 +30,20 @@ public class HealthBar : MonoBehaviour
         else
         {
             Debug.LogError("Health component not found on " + gameObject.name);
+        }
+    }
+
+    private void InitializeHealthBarVisibility()
+    {
+        if (showOnlyWhenDamaged && !isPlayerHealthBar)
+        {
+            // Force hide enemy health bars at start
+            canvasGroup.alpha = 0;
+            Debug.Log("Enemy health bar hidden at start");
+        }
+        else
+        {
+            canvasGroup.alpha = 1;
         }
     }
 
@@ -68,6 +82,18 @@ public class HealthBar : MonoBehaviour
         {
             health.OnHealthChanged.RemoveListener(UpdateHealthBar);
             health.OnDied.RemoveListener(OnEntityDied);
+        }
+    }
+
+    private void Update()
+    {
+        // Additional check to ensure enemy health bars stay hidden when at full health
+        if (showOnlyWhenDamaged && !isPlayerHealthBar && health != null)
+        {
+            if (health.CurrentHealth >= health.MaxHealth && canvasGroup.alpha > 0)
+            {
+                canvasGroup.alpha = 0;
+            }
         }
     }
 }

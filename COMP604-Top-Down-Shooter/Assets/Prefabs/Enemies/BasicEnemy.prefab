@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 3159482048535767455}
   - component: {fileID: 1849812513884981419}
   - component: {fileID: 5906535424891424605}
-  - component: {fileID: 6249861674615568132}
   m_Layer: 0
   m_Name: EnemyHealthBar
   m_TagString: Untagged
@@ -31,7 +30,7 @@ RectTransform:
   m_GameObject: {fileID: 3757534991834861253}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_LocalScale: {x: 0.01, y: 0.002, z: 0.01}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3154007431117810638}
@@ -40,8 +39,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 1.5}
-  m_SizeDelta: {x: 10, y: 0.05}
+  m_AnchoredPosition: {x: 0, y: 1}
+  m_SizeDelta: {x: 2, y: 0.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &5622421982898239714
 Canvas:
@@ -134,18 +133,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a5547f6f72ed4d8caf3434f1fe6851b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &6249861674615568132
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3757534991834861253}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6833e8c5ddb0b4deb8a8d6c650215e8d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &4547100096894105155
 GameObject:
   m_ObjectHideFlags: 0
@@ -181,7 +168,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 320, y: 200}
+  m_SizeDelta: {x: 360, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3526551631585118773
 CanvasRenderer:
@@ -380,7 +367,7 @@ MonoBehaviour:
   OnDied:
     m_PersistentCalls:
       m_Calls: []
-  maxHealth: 50
+  maxHealth: 100
 --- !u!114 &4499912103348735857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -446,17 +433,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8850642975491369349}
-  m_LocalRotation: {x: 0.1957265, y: -0.03280243, z: -0.03469521, w: 0.9794955}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9207474519574140732}
-  m_LocalEulerAnglesHint: {x: 22.405, y: -4.83, z: -5.014}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 320, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2479366909299444440
 CanvasRenderer:
@@ -479,7 +466,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.5943396, g: 0.5943396, b: 0.5943396, a: 1}
+  m_Color: {r: 0.6886792, g: 0.6886792, b: 0.6886792, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
