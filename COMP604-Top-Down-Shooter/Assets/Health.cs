@@ -16,11 +16,18 @@ public class Health : MonoBehaviour
 
     private void Start()
     {
-        // Initialise health to max when the object is created
         CurrentHealth = maxHealth;
-        // Trigger the event to update any UI that might be listening at the start
-        OnHealthChanged?.Invoke(CurrentHealth);
+        Debug.Log($"{gameObject.name} health initialized: {CurrentHealth}/{maxHealth}");
+        
+        // tiny delay to ensure HealthBar is ready
+        Invoke(nameof(InitializeHealth), 0.01f);
     }
+
+private void InitializeHealth()
+{
+    // Trigger the event to update any UI that might be listening
+    OnHealthChanged?.Invoke(CurrentHealth);
+}
 
     public void TakeDamage(int damageAmount)
     {

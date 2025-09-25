@@ -12,10 +12,15 @@ public class EnemyAttack : MonoBehaviour
 
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
-        if (player != null)
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj != null)
         {
+            player = playerObj.transform;
             playerHealth = player.GetComponent<Health>();
+        }
+        else
+        {
+            Debug.LogWarning("Player not found with tag 'Player'. Make sure your player has the 'Player' tag.");
         }
     }
 

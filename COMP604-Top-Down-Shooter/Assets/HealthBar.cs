@@ -18,18 +18,26 @@ public class HealthBar : MonoBehaviour
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // Initialize with correct visibility
-        InitializeHealthBarVisibility();
-        
+        // Initialise visibility based on settings
+        if (showOnlyWhenDamaged && !isPlayerHealthBar)
+        {
+            canvasGroup.alpha = 0;
+            Debug.Log("Enemy health bar hidden at start");
+        }
+        else
+        {
+            canvasGroup.alpha = 1;
+            Debug.Log("Player health bar visible at start");
+        }
+
         if (health != null)
         {
             health.OnHealthChanged.AddListener(UpdateHealthBar);
             health.OnDied.AddListener(OnEntityDied);
-            UpdateHealthBar(health.CurrentHealth);
         }
         else
         {
-            Debug.LogError("Health component not found on " + gameObject.name);
+            Debug.LogError("Health component not assigned to HealthBar on " + gameObject.name);
         }
     }
 

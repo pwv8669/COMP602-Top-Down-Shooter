@@ -85,70 +85,93 @@ public class GunSystem : MonoBehaviour
 
     void TryShootOnce()
     {
-        if (reloading) return;
-        if (!readyToShoot) return;
-        if (Time.time < nextShotTime) return;
-
-        if (bulletsLeft <= 0) return;
-
-        if (!mainCamera)
-        {
-            Debug.LogError("SingleWeaponController: mainCamera not set");
-            return;
-        }
+        Debug.Log("=== SHOOT ATTEMPT ===");
+        
+        if (reloading) { Debug.Log("Can't shoot: reloading"); return; }
+        if (!readyToShoot) { Debug.Log("Can't shoot: not ready"); return; }
+        if (Time.time < nextShotTime) { Debug.Log("Can't shoot: cooldown"); return; }
+        if (bulletsLeft <= 0) { Debug.Log("Can't shoot: out of ammo"); return; }
+        if (!mainCamera) { Debug.LogError("No main camera"); return; }
 
         readyToShoot = false;
+        Debug.Log("Starting shot sequence...");
 
-
-        // Step 1: Raycast from camera through mouse to get mouse in 3d space.
+        // Step 1: Raycast from camera through mouse
         Ray camRay = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Debug.Log($"Camera ray: {camRay.origin} -> {camRay.direction}");
+        
         if (Physics.Raycast(camRay, out RaycastHit camHit, Mathf.Infinity))
         {
-            // Step 2: Set target position for bullet raycast.
+            Debug.Log($"Camera hit: {camHit.collider.name} at {camHit.point}");
+            
+            // Step 2: Set target position for bullet raycast
             Vector3 targetPos = new Vector3(camHit.point.x, transform.position.y, camHit.point.z);
-            // Step 3: Determine bullet's direction.
-            Vector3 direction = (targetPos - transform.position).normalized;
-            // Step 4: Apply spread.
+            Debug.Log($"Target position: {targetPos}");
+            
+            // Step 3: Use camera forward direction 
+            Vector3 direction = mainCamera.transform.forward;
+            direction.y = 0; // Keep it horizontal
+            direction = direction.normalized;
+
+            Debug.Log($"Using camera direction: {direction}");
+            
+            // Step 4: Apply spread
             if (spreadDegrees > 0f)
             {
                 float yaw = Random.Range(-spreadDegrees, spreadDegrees);
                 Quaternion spreadRot = Quaternion.AngleAxis(yaw, Vector3.up);
                 direction = spreadRot * direction;
+                Debug.Log($"After spread: {direction}");
             }
+            
+            // Visual debug ray
+            Debug.DrawRay(transform.position, direction * range, Color.red, 2f);
+            
             // Step 5: Raycast from gun towards direction
+            Vector3 shootOrigin = new Vector3(transform.position.x, 1.0f, transform.position.z); // Character height
+
+            Debug.Log($"Shooting from {shootOrigin} with range {range}");
+            
             if (Physics.Raycast(transform.position, direction, out RaycastHit enemyHit, range, targetMask))
             {
-                //Step 6: Apply damage if hit enemy
+                Debug.Log($"HIT ENEMY: {enemyHit.collider.name}");
+                Debug.Log($"Hit point: {enemyHit.point}");
+                Debug.Log($"Enemy layer: {enemyHit.collider.gameObject.layer}");
+                
                 Health enemyHealth = enemyHit.collider.GetComponent<Health>();
                 if (enemyHealth != null)
                 {
+                    Debug.Log($"Applying {damage} damage to enemy");
                     enemyHealth.TakeDamage(damage);
-                    Debug.Log($"Hit {enemyHit.collider.name} for {damage} damage. Health: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}");
+                    Debug.Log($"Enemy health now: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}");
                 }
                 else
                 {
-                    Debug.Log("Hit: " + enemyHit.collider.name + " (no Health component)");
+                    Debug.LogWarning($"No Health component on {enemyHit.collider.name}");
                 }
             }
+            else
+            {
+                Debug.Log("Gun raycast MISSED enemy");
+                Debug.Log("Check: Enemy layer, Collider, Range, Position");
+            }
 
-            // Ammo 
+            // Ammo management
             bulletsLeft--;
             float secondsPerShot = 1f / Mathf.Max(0.0001f, fireRate);
             nextShotTime = Time.time + secondsPerShot;
             Invoke(nameof(ResetShot), secondsPerShot * 0.9f);
 
-            // Burst continuation for semi-auto taps
+            // Burst continuation
             shotsRemainingThisTap = Mathf.Max(0, shotsRemainingThisTap - 1);
             if (!isAutomatic && shotsRemainingThisTap > 0 && bulletsLeft > 0)
                 Invoke(nameof(TryShootOnce), secondsPerShot);
         }
         else
         {
+            Debug.LogWarning("Could not raycast from camera to mouse");
             readyToShoot = true;
-            Debug.LogWarning("Could not raycast from camera to mouse.");
-            return;
         }
-        
     }
 
     void ResetShot() => readyToShoot = true;
