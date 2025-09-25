@@ -2,6 +2,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections.Generic;
+using System.Collections;
 
 public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCallbacks
 {
@@ -11,6 +12,12 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
 
     [Header("Debug Info")]
     public bool showDebugLogs = true;
+
+    // Testing code. It will be remmoved in production
+    [Header("Testing")]
+    public bool isTestPlayerOne = false;
+    public bool isTestPlayerTwo = false;
+    private static string sharedRoomCode;
 
     // Current room status
     private bool isConnectedToPhoton = false;
@@ -22,7 +29,7 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
 
         // Manual callback registration (reliable method)
         PhotonNetwork.AddCallbackTarget(this);
-
+        
         // Unity Editor only - cleanup previous connections (not needed in builds)
 #if UNITY_EDITOR
         if (PhotonNetwork.IsConnected || PhotonNetwork.NetworkClientState != ClientState.Disconnected)
@@ -138,7 +145,18 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
         Debug.Log("*** OnJoinedLobby CALLED! ***");
         Debug.Log("[Multiplayer] Successfully joined lobby!");
 
-        // Ready for gameplay - no auto test
+        //Testing code - to be removed in production
+        if (isTestPlayerOne)
+        {
+            string roomCode = CreateRoomWithCode();
+            sharedRoomCode = roomCode;
+            Debug.Log($"[Multiplayer] TEST: Player 1 created room with code: {sharedRoomCode}");
+        }
+        else if (isTestPlayerTwo)
+        {
+            StartCoroutine(JoinRoomWhenAvailable());
+        }
+
     }
 
     public void OnLeftLobby()
@@ -287,4 +305,15 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
     }
 
     #endregion
+
+    // Testing methods - to be removed in production
+    IEnumerator JoinRoomWhenAvailable()
+    {
+        Debug.Log("[Multiplayer] TEST: Player 2 waiting for room code...");
+        while (string.IsNullOrEmpty(sharedRoomCode))
+        {
+            yield return new WaitForSeconds(1f);
+        }
+        JoinRoomWithCode(sharedRoomCode);
+    }
 }
