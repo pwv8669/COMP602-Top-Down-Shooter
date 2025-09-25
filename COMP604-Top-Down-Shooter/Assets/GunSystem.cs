@@ -108,8 +108,8 @@ public class GunSystem : MonoBehaviour
             Vector3 targetPos = new Vector3(camHit.point.x, transform.position.y, camHit.point.z);
             Debug.Log($"Target position: {targetPos}");
             
-            // Step 3: Use camera forward direction 
-            Vector3 direction = mainCamera.transform.forward;
+            // Step 3: Calculate direction from gun to target point
+            Vector3 direction = (targetPos - transform.position).normalized;    
             direction.y = 0; // Keep it horizontal
             direction = direction.normalized;
 
@@ -132,7 +132,7 @@ public class GunSystem : MonoBehaviour
 
             Debug.Log($"Shooting from {shootOrigin} with range {range}");
             
-            if (Physics.Raycast(transform.position, direction, out RaycastHit enemyHit, range, targetMask))
+            if (Physics.Raycast(shootOrigin, direction, out RaycastHit enemyHit, range, targetMask))
             {
                 Debug.Log($"HIT ENEMY: {enemyHit.collider.name}");
                 Debug.Log($"Hit point: {enemyHit.point}");
