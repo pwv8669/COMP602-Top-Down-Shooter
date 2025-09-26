@@ -33701,6 +33701,56 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!1 &839405323
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 839405325}
+  - component: {fileID: 839405324}
+  m_Layer: 0
+  m_Name: Voice chat
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &839405324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 839405323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa033041c0dfb824c9e2f0749ea449a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableVoiceChatOnStart: 1
+  pushToTalkKey: 116
+  isPushToTalkMode: 0
+  microphoneVolume: 1
+  speakerVolume: 1
+  showDebugLogs: 1
+--- !u!4 &839405325
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 839405323}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &847770277
 Mesh:
   m_ObjectHideFlags: 0
@@ -59173,7 +59223,6 @@ GameObject:
   - component: {fileID: 1424087772}
   - component: {fileID: 1424087771}
   - component: {fileID: 1424087770}
-  - component: {fileID: 1424087769}
   m_Layer: 0
   m_Name: Multiplayer manager
   m_TagString: Untagged
@@ -59181,24 +59230,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1424087769
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1424087768}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa033041c0dfb824c9e2f0749ea449a3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enableVoiceChatOnStart: 1
-  pushToTalkKey: 116
-  isPushToTalkMode: 0
-  microphoneVolume: 1
-  speakerVolume: 1
-  showDebugLogs: 1
 --- !u!114 &1424087770
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59214,7 +59245,7 @@ MonoBehaviour:
   maxPlayersPerRoom: 4
   gameVersion: 1.0
   showDebugLogs: 1
-  manualRoomCode: 9Q833S
+  manualRoomCode: 
 --- !u!114 &1424087771
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87308,3 +87339,4 @@ SceneRoots:
   - {fileID: 4286855280857632009}
   - {fileID: 8775796264897168924}
   - {fileID: 1424087772}
+  - {fileID: 839405325}
