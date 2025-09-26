@@ -640,7 +640,7 @@ MonoBehaviour:
   maxPlayersPerRoom: 4
   gameVersion: 1.0
   showDebugLogs: 1
-  isTestPlayerOne: 0
+  isTestPlayerOne: 1
   isTestPlayerTwo: 0
 --- !u!1 &1253393876
 GameObject:
