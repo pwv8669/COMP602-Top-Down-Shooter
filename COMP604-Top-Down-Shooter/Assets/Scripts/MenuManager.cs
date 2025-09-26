@@ -88,28 +88,28 @@ public class MenuManager : MonoBehaviour
     {
         HideAllPanels();
         if (settingsPanel != null) settingsPanel.SetActive(true);
-        HideTitle(); // Hide title on settings page
+        HideTitle();
     }
 
     public void ShowHostMultiplayer()
     {
         HideAllPanels();
         if (hostMultiplayerPanel != null) hostMultiplayerPanel.SetActive(true);
-        HideTitle(); // Hide title on host page
+        HideTitle();
     }
 
     public void ShowJoinMultiplayer()
     {
         HideAllPanels();
         if (joinMultiplayerPanel != null) joinMultiplayerPanel.SetActive(true);
-        HideTitle(); // Hide title on join page
+        HideTitle();
     }
 
     public void ShowMainMenu()
     {
         HideAllPanels();
         if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
-        ShowTitle(); // Show title only on main menu
+        ShowTitle();
     }
 
     public void OnGraphicsChanged(int index)
@@ -133,6 +133,12 @@ public class MenuManager : MonoBehaviour
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (hostMultiplayerPanel != null) hostMultiplayerPanel.SetActive(false);
         if (joinMultiplayerPanel != null) joinMultiplayerPanel.SetActive(false);
+    }
+
+    void HideTitle()
+    {
+        GameObject title = GameObject.Find("TitleText");
+        if (title != null) title.SetActive(false);
     }
 
     void ShowTitle()
