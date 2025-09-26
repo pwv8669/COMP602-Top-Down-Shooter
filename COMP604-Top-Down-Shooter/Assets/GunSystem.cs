@@ -17,6 +17,10 @@ public class GunSystem : MonoBehaviour
     public Camera mainCamera;            // top-down camera
     public LayerMask targetMask;         // enemies
 
+    [Header("Audio")]
+    public AudioSource audioSource;         // assign in inspector
+    public AudioClip audioClip;           // assign in inspector
+
     // runtime
     int bulletsLeft;
     int shotsRemainingThisTap;
@@ -154,6 +158,11 @@ public class GunSystem : MonoBehaviour
             {
                 Debug.Log("Gun raycast MISSED enemy");
                 Debug.Log("Check: Enemy layer, Collider, Range, Position");
+            }
+
+            if(audioSource && audioClip)
+            {
+                audioSource.PlayOneShot(audioClip);
             }
 
             // Ammo management
