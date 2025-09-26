@@ -51,7 +51,7 @@ public class VoiceChat : MonoBehaviour
 
     IEnumerator WaitForRoomAndInitialize()
     {
-        // Wait until we're connected and in a room
+        // Wait until connected and in a room
         while (multiplayerManager == null || !multiplayerManager.IsInRoom())
         {
             if (showDebugLogs && multiplayerManager != null)
@@ -125,6 +125,17 @@ public class VoiceChat : MonoBehaviour
 
         HandlePushToTalk();
         UpdatePlayerSpeakers();
+
+        //For testing. it will be removed
+        if (Input.GetKeyDown(KeyCode.M)) // Press 'M' for mute all players
+        {
+            MuteAllPlayers();
+        }
+
+        if (Input.GetKeyDown(KeyCode.U)) // Press 'U' for unmute all players
+        {
+            UnmuteAllPlayers();
+        }
     }
 
     void HandlePushToTalk()
