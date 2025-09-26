@@ -76,17 +76,15 @@ public class VoiceChat : MonoBehaviour
         SetupVoiceSpeaker();
         SetupAudioOutput();
 
-        if (enableVoiceChatOnStart && !isPushToTalkMode)
-        {
-            EnableMicrophone();
-        }
-
         isVoiceSystemReady = true;
 
         if (showDebugLogs)
         {
             Debug.Log("[VoiceChat] Voice system initialized successfully!");
             Debug.Log("[VoiceChat] Press 'V' to check voice status");
+
+            // 상태 즉시 확인
+            ShowVoiceStatus();
         }
     }
 
@@ -100,9 +98,41 @@ public class VoiceChat : MonoBehaviour
         }
 
         // Configure recorder settings
-        voiceRecorder.TransmitEnabled = false; // Start with mic disabled
         voiceRecorder.VoiceDetection = true;
         voiceRecorder.VoiceDetectionThreshold = 0.01f;
+
+        // 마이크 장치 명시적 설정
+        if (Microphone.devices.Length > 0)
+        {
+            try
+            {
+                // Photon Voice 2.0+ 방식
+                var micDevice = new Photon.Voice.DeviceInfo(Microphone.devices[0]);
+                voiceRecorder.MicrophoneDevice = micDevice;
+                if (showDebugLogs)
+                    Debug.Log("[VoiceChat] Selected microphone: " + Microphone.devices[0]);
+            }
+            catch
+            {
+                // 구버전 Photon Voice 또는 다른 방식
+                if (showDebugLogs)
+                    Debug.Log("[VoiceChat] Using default microphone device");
+            }
+        }
+
+        // 자동 시작 모드라면 바로 켜기
+        if (enableVoiceChatOnStart && !isPushToTalkMode)
+        {
+            voiceRecorder.TransmitEnabled = true;
+            isMicrophoneEnabled = true;
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Microphone auto-enabled");
+        }
+        else
+        {
+            voiceRecorder.TransmitEnabled = false;
+            isMicrophoneEnabled = false;
+        }
 
         // Set microphone volume
         SetMicrophoneVolume(microphoneVolume);
