@@ -25,6 +25,9 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
         Debug.Log("[Multiplayer] === STARTING PHOTON CONNECTION ===");
         PhotonNetwork.AddCallbackTarget(this);
 
+        // 음성 채팅을 위한 설정 추가
+        PhotonNetwork.EnableCloseConnection = true;
+
 #if UNITY_EDITOR
         if (PhotonNetwork.IsConnected || PhotonNetwork.NetworkClientState != ClientState.Disconnected)
         {
@@ -114,6 +117,7 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
         isInLobby = true; // Skip lobby, directly ready for room operations
         Debug.Log("*** OnConnectedToMaster! READY FOR ROOMS! ***");
         Debug.Log("[Multiplayer] Press '1' to CREATE room, '2' to JOIN room, '3' to LEAVE room");
+        PhotonNetwork.JoinLobby();
     }
 
     public void OnDisconnected(DisconnectCause cause)
@@ -138,7 +142,8 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
     public void OnJoinedLobby()
     {
         isInLobby = true;
-        Debug.Log("*** OnJoinedLobby! ***");
+        Debug.Log("*** OnJoinedLobby! READY FOR ROOMS! ***");
+        Debug.Log("[Multiplayer] Press '1' to CREATE room, '2' to JOIN room, '3' to LEAVE room");
     }
 
     public void OnLeftLobby()
@@ -176,6 +181,17 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
     {
         Debug.LogError($"*** JOIN ROOM FAILED: {message} ({returnCode}) ***");
         Debug.LogError($"*** Make sure the room code '{manualRoomCode}' is correct! ***");
+
+        // 더 자세한 에러 정보
+        switch (returnCode)
+        {
+            case 32758:
+                Debug.LogError("*** Room does not exist! Check the room code! ***");
+                break;
+            case 32764:
+                Debug.LogError("*** Room is full! ***");
+                break;
+        }
     }
 
     public void OnJoinRandomFailed(short returnCode, string message) { }
@@ -185,7 +201,9 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
         Debug.Log("*** ROOM CREATED SUCCESSFULLY! ***");
         Debug.Log($"*** Room Code: {PhotonNetwork.CurrentRoom.Name} ***");
         lastCreatedRoomCode = PhotonNetwork.CurrentRoom.Name;
-        Debug.Log($"*** SHARE THIS CODE: {lastCreatedRoomCode} ***");
+        Debug.Log($"*** ========================================= ***");
+        Debug.Log($"*** SHARE THIS CODE WITH YOUR FRIEND: {lastCreatedRoomCode} ***");
+        Debug.Log($"*** ========================================= ***");
     }
 
     public void OnPlayerEnteredRoom(Player newPlayer)
@@ -219,8 +237,9 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
         RoomOptions options = new RoomOptions
         {
             MaxPlayers = (byte)maxPlayersPerRoom,
-            IsVisible = false,
-            IsOpen = true
+            IsVisible = true,  
+            IsOpen = true,
+            PublishUserId = true  
         };
 
         Debug.Log($"*** CREATING ROOM: {roomCode} ***");

@@ -59175,7 +59175,7 @@ GameObject:
   - component: {fileID: 1424087770}
   - component: {fileID: 1424087769}
   m_Layer: 0
-  m_Name: VoiceChat
+  m_Name: Multiplayer manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -59214,7 +59214,7 @@ MonoBehaviour:
   maxPlayersPerRoom: 4
   gameVersion: 1.0
   showDebugLogs: 1
-  manualRoomCode: 
+  manualRoomCode: 9Q833S
 --- !u!114 &1424087771
 MonoBehaviour:
   m_ObjectHideFlags: 0
