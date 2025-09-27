@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 using Photon.Voice.Unity;
+using Photon.Voice.PUN;
 using Photon.Realtime;
 using System.Collections.Generic;
 using System.Collections;
@@ -25,6 +26,7 @@ public class VoiceChat : MonoBehaviour
     private Recorder voiceRecorder;
     private Speaker voiceSpeaker;
     private AudioSource audioSource;
+    private PhotonVoiceView photonVoiceView;
 
     // Reference to Multiplayer system
     private Multiplayer multiplayerManager;
@@ -72,9 +74,11 @@ public class VoiceChat : MonoBehaviour
 
     void InitializeVoiceSystem()
     {
+        SetupPhotonVoiceView();
         SetupVoiceRecorder();
         SetupVoiceSpeaker();
         SetupAudioOutput();
+        ConnectPhotonVoiceComponents();
 
         isVoiceSystemReady = true;
 
@@ -82,31 +86,53 @@ public class VoiceChat : MonoBehaviour
         {
             Debug.Log("[VoiceChat] Voice system initialized successfully!");
             Debug.Log("[VoiceChat] Press 'V' to check voice status");
-
-            // 상태 즉시 확인
             ShowVoiceStatus();
+        }
+    }
+
+    void SetupPhotonVoiceView()
+    {
+        // Get existing PhotonVoiceView component first
+        photonVoiceView = GetComponent<PhotonVoiceView>();
+        if (photonVoiceView == null)
+        {
+            photonVoiceView = gameObject.AddComponent<PhotonVoiceView>();
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] PhotonVoiceView component created automatically");
+        }
+        else
+        {
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Using existing PhotonVoiceView component from GameObject");
         }
     }
 
     void SetupVoiceRecorder()
     {
-        // Get or add Recorder component
+        // Get existing Recorder component first
         voiceRecorder = GetComponent<Recorder>();
         if (voiceRecorder == null)
         {
             voiceRecorder = gameObject.AddComponent<Recorder>();
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Recorder component created automatically");
+        }
+        else
+        {
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Using existing Recorder component from GameObject");
         }
 
         // Configure recorder settings
         voiceRecorder.VoiceDetection = true;
         voiceRecorder.VoiceDetectionThreshold = 0.01f;
+        voiceRecorder.TransmitEnabled = false; // Start disabled, will be enabled based on settings
 
-        // 마이크 장치 명시적 설정
+        // Set microphone device explicitly
         if (Microphone.devices.Length > 0)
         {
             try
             {
-                // Photon Voice 2.0+ 방식
                 var micDevice = new Photon.Voice.DeviceInfo(Microphone.devices[0]);
                 voiceRecorder.MicrophoneDevice = micDevice;
                 if (showDebugLogs)
@@ -114,23 +140,21 @@ public class VoiceChat : MonoBehaviour
             }
             catch
             {
-                // 구버전 Photon Voice 또는 다른 방식
                 if (showDebugLogs)
                     Debug.Log("[VoiceChat] Using default microphone device");
             }
         }
 
-        // 자동 시작 모드라면 바로 켜기
+        // Enable microphone based on initial settings
         if (enableVoiceChatOnStart && !isPushToTalkMode)
         {
             voiceRecorder.TransmitEnabled = true;
             isMicrophoneEnabled = true;
             if (showDebugLogs)
-                Debug.Log("[VoiceChat] Microphone auto-enabled");
+                Debug.Log("[VoiceChat] Microphone auto-enabled on start");
         }
         else
         {
-            voiceRecorder.TransmitEnabled = false;
             isMicrophoneEnabled = false;
         }
 
@@ -138,40 +162,103 @@ public class VoiceChat : MonoBehaviour
         SetMicrophoneVolume(microphoneVolume);
 
         if (showDebugLogs)
-            Debug.Log("[VoiceChat] Voice recorder configured");
+            Debug.Log("[VoiceChat] Voice recorder configured successfully");
     }
 
     void SetupVoiceSpeaker()
     {
-        // Get or add Speaker component
+        // Get existing Speaker component first
         voiceSpeaker = GetComponent<Speaker>();
         if (voiceSpeaker == null)
         {
             voiceSpeaker = gameObject.AddComponent<Speaker>();
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Speaker component created automatically");
+        }
+        else
+        {
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Using existing Speaker component from GameObject");
         }
 
         // Configure speaker settings
         voiceSpeaker.enabled = true;
 
         if (showDebugLogs)
-            Debug.Log("[VoiceChat] Voice speaker configured");
+            Debug.Log("[VoiceChat] Voice speaker configured successfully");
     }
 
     void SetupAudioOutput()
     {
-        // Get or add AudioSource component
+        // Get existing AudioSource component first
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] AudioSource component created automatically");
+        }
+        else
+        {
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Using existing AudioSource component from GameObject");
         }
 
-        // Configure audio output
+        // Configure audio output settings
         audioSource.volume = speakerVolume;
         audioSource.spatialBlend = 0f; // 2D audio for voice chat
+        audioSource.playOnAwake = false;
 
         if (showDebugLogs)
-            Debug.Log("[VoiceChat] Audio output configured");
+            Debug.Log("[VoiceChat] Audio output configured successfully");
+    }
+
+    void ConnectPhotonVoiceComponents()
+    {
+        // Connect Recorder and Speaker to PhotonVoiceView
+        if (photonVoiceView != null)
+        {
+            if (voiceRecorder != null && voiceSpeaker != null)
+            {
+                try
+                {
+                    // Try different PhotonVoiceView setup methods based on version
+                    var voiceViewType = photonVoiceView.GetType();
+
+                    // Method 1: Try SetupRecorderSpeaker method (newer versions)
+                    var setupMethod = voiceViewType.GetMethod("SetupRecorderSpeaker");
+                    if (setupMethod != null)
+                    {
+                        setupMethod.Invoke(photonVoiceView, new object[] { voiceRecorder, voiceSpeaker });
+                        if (showDebugLogs)
+                            Debug.Log("[VoiceChat] PhotonVoiceView connected via SetupRecorderSpeaker method");
+                        return;
+                    }
+
+                    // Method 2: Try direct property assignment (older versions)
+                    var recorderProperty = voiceViewType.GetProperty("RecorderInUse");
+                    var speakerProperty = voiceViewType.GetProperty("SpeakerInUse");
+
+                    if (recorderProperty != null && speakerProperty != null)
+                    {
+                        recorderProperty.SetValue(photonVoiceView, voiceRecorder);
+                        speakerProperty.SetValue(photonVoiceView, voiceSpeaker);
+                        if (showDebugLogs)
+                            Debug.Log("[VoiceChat] PhotonVoiceView connected via property assignment");
+                        return;
+                    }
+
+                    // Method 3: Manual Inspector assignment message
+                    if (showDebugLogs)
+                        Debug.LogWarning("[VoiceChat] Automatic PhotonVoiceView connection failed. Please manually assign Recorder and Speaker in PhotonVoiceView Inspector.");
+                }
+                catch (System.Exception e)
+                {
+                    if (showDebugLogs)
+                        Debug.LogWarning("[VoiceChat] Could not connect PhotonVoiceView automatically: " + e.Message + ". Please assign manually in Inspector.");
+                }
+            }
+        }
     }
 
     void Update()
@@ -187,7 +274,8 @@ public class VoiceChat : MonoBehaviour
             ShowVoiceStatus();
         }
 
-        // TESTING CODE: This key input block is for testing and should be removed for launch.
+        // Debug keys for testing - remove in production build
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (Input.GetKeyDown(KeyCode.M)) // Press 'M' for mute all players
         {
             MuteAllPlayers();
@@ -197,6 +285,7 @@ public class VoiceChat : MonoBehaviour
         {
             UnmuteAllPlayers();
         }
+#endif
     }
 
     void ShowVoiceStatus()
@@ -208,6 +297,7 @@ public class VoiceChat : MonoBehaviour
         Debug.Log("Connected Players: " + GetConnectedPlayersCount());
         Debug.Log("Recorder Available: " + (voiceRecorder != null));
         Debug.Log("Speaker Available: " + (voiceSpeaker != null));
+        Debug.Log("PhotonVoiceView Available: " + (photonVoiceView != null));
 
         // Check microphone devices
         Debug.Log("Available Microphones: " + Microphone.devices.Length);
@@ -242,6 +332,10 @@ public class VoiceChat : MonoBehaviour
         // Player list
         var playerNames = GetConnectedPlayerNames();
         Debug.Log("Players in room: " + string.Join(", ", playerNames.ToArray()));
+
+        // Check for VoiceLogger component
+        var voiceLogger = GetComponent<VoiceLogger>();
+        Debug.Log("VoiceLogger Present: " + (voiceLogger != null));
 
         Debug.Log("========================");
     }
