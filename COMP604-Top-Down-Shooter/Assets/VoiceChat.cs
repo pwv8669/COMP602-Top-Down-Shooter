@@ -1,0 +1,527 @@
+using UnityEngine;
+using Photon.Pun;
+using Photon.Voice.Unity;
+using Photon.Realtime;
+using System.Collections.Generic;
+using System.Collections;
+
+public class VoiceChat : MonoBehaviour
+{
+    [Header("Voice Chat Settings")]
+    public bool enableVoiceChatOnStart = true;
+    public KeyCode pushToTalkKey = KeyCode.T;
+    public bool isPushToTalkMode = false;
+
+    [Header("Audio Settings")]
+    [Range(0f, 2f)]
+    public float microphoneVolume = 1f;
+    [Range(0f, 2f)]
+    public float speakerVolume = 1f;
+
+    [Header("Debug")]
+    public bool showDebugLogs = true;
+
+    // Photon Voice Components
+    private Recorder voiceRecorder;
+    private Speaker voiceSpeaker;
+    private AudioSource audioSource;
+
+    // Reference to Multiplayer system
+    private Multiplayer multiplayerManager;
+
+    // Mute system
+    private Dictionary<string, bool> mutedPlayers = new Dictionary<string, bool>();
+    private Dictionary<string, Speaker> playerSpeakers = new Dictionary<string, Speaker>();
+
+    // Voice state
+    private bool isMicrophoneEnabled = false;
+    private bool isVoiceSystemReady = false;
+
+    void Start()
+    {
+        // Find multiplayer manager
+        multiplayerManager = FindFirstObjectByType<Multiplayer>();
+        if (multiplayerManager == null)
+        {
+            if (showDebugLogs)
+                Debug.LogWarning("[VoiceChat] Multiplayer manager not found! Voice chat will initialize when room is joined.");
+        }
+
+        // Wait for room connection before initializing voice system
+        StartCoroutine(WaitForRoomAndInitialize());
+    }
+
+    IEnumerator WaitForRoomAndInitialize()
+    {
+        // Wait until connected and in a room
+        while (multiplayerManager == null || !multiplayerManager.IsInRoom())
+        {
+            if (showDebugLogs && multiplayerManager != null)
+                Debug.Log("[VoiceChat] Waiting for room connection...");
+            yield return new WaitForSeconds(1f);
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Room connected! Initializing voice system...");
+
+        // Additional wait time to ensure Photon Voice full initialization
+        yield return new WaitForSeconds(2f);
+
+        InitializeVoiceSystem();
+    }
+
+    void InitializeVoiceSystem()
+    {
+        SetupVoiceRecorder();
+        SetupVoiceSpeaker();
+        SetupAudioOutput();
+
+        isVoiceSystemReady = true;
+
+        if (showDebugLogs)
+        {
+            Debug.Log("[VoiceChat] Voice system initialized successfully!");
+            Debug.Log("[VoiceChat] Press 'V' to check voice status");
+
+            // 상태 즉시 확인
+            ShowVoiceStatus();
+        }
+    }
+
+    void SetupVoiceRecorder()
+    {
+        // Get or add Recorder component
+        voiceRecorder = GetComponent<Recorder>();
+        if (voiceRecorder == null)
+        {
+            voiceRecorder = gameObject.AddComponent<Recorder>();
+        }
+
+        // Configure recorder settings
+        voiceRecorder.VoiceDetection = true;
+        voiceRecorder.VoiceDetectionThreshold = 0.01f;
+
+        // 마이크 장치 명시적 설정
+        if (Microphone.devices.Length > 0)
+        {
+            try
+            {
+                // Photon Voice 2.0+ 방식
+                var micDevice = new Photon.Voice.DeviceInfo(Microphone.devices[0]);
+                voiceRecorder.MicrophoneDevice = micDevice;
+                if (showDebugLogs)
+                    Debug.Log("[VoiceChat] Selected microphone: " + Microphone.devices[0]);
+            }
+            catch
+            {
+                // 구버전 Photon Voice 또는 다른 방식
+                if (showDebugLogs)
+                    Debug.Log("[VoiceChat] Using default microphone device");
+            }
+        }
+
+        // 자동 시작 모드라면 바로 켜기
+        if (enableVoiceChatOnStart && !isPushToTalkMode)
+        {
+            voiceRecorder.TransmitEnabled = true;
+            isMicrophoneEnabled = true;
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Microphone auto-enabled");
+        }
+        else
+        {
+            voiceRecorder.TransmitEnabled = false;
+            isMicrophoneEnabled = false;
+        }
+
+        // Set microphone volume
+        SetMicrophoneVolume(microphoneVolume);
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Voice recorder configured");
+    }
+
+    void SetupVoiceSpeaker()
+    {
+        // Get or add Speaker component
+        voiceSpeaker = GetComponent<Speaker>();
+        if (voiceSpeaker == null)
+        {
+            voiceSpeaker = gameObject.AddComponent<Speaker>();
+        }
+
+        // Configure speaker settings
+        voiceSpeaker.enabled = true;
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Voice speaker configured");
+    }
+
+    void SetupAudioOutput()
+    {
+        // Get or add AudioSource component
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        // Configure audio output
+        audioSource.volume = speakerVolume;
+        audioSource.spatialBlend = 0f; // 2D audio for voice chat
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Audio output configured");
+    }
+
+    void Update()
+    {
+        if (!isVoiceSystemReady) return;
+
+        HandlePushToTalk();
+        UpdatePlayerSpeakers();
+
+        // Voice status check key (V key)
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            ShowVoiceStatus();
+        }
+
+        // TESTING CODE: This key input block is for testing and should be removed for launch.
+        if (Input.GetKeyDown(KeyCode.M)) // Press 'M' for mute all players
+        {
+            MuteAllPlayers();
+        }
+
+        if (Input.GetKeyDown(KeyCode.U)) // Press 'U' for unmute all players
+        {
+            UnmuteAllPlayers();
+        }
+    }
+
+    void ShowVoiceStatus()
+    {
+        Debug.Log("=== VOICE CHAT STATUS ===");
+        Debug.Log("Voice System Ready: " + isVoiceSystemReady);
+        Debug.Log("Microphone Enabled: " + isMicrophoneEnabled);
+        Debug.Log("In Room: " + PhotonNetwork.InRoom);
+        Debug.Log("Connected Players: " + GetConnectedPlayersCount());
+        Debug.Log("Recorder Available: " + (voiceRecorder != null));
+        Debug.Log("Speaker Available: " + (voiceSpeaker != null));
+
+        // Check microphone devices
+        Debug.Log("Available Microphones: " + Microphone.devices.Length);
+        for (int i = 0; i < Microphone.devices.Length; i++)
+        {
+            Debug.Log("  - Microphone " + i + ": " + Microphone.devices[i]);
+        }
+
+        if (voiceRecorder != null)
+        {
+            Debug.Log("Recorder Transmitting: " + voiceRecorder.TransmitEnabled);
+            Debug.Log("Microphone Level: " + GetMicrophoneLevel().ToString("F3"));
+
+            // Safe microphone device name check
+            string micDevice = "Default";
+            try
+            {
+                if (voiceRecorder.MicrophoneDevice != null)
+                {
+                    micDevice = voiceRecorder.MicrophoneDevice.ToString();
+                }
+            }
+            catch
+            {
+                micDevice = "Unknown";
+            }
+            Debug.Log("Microphone Device: " + micDevice);
+        }
+
+        Debug.Log("Muted Players Count: " + GetMutedPlayerIds().Count);
+
+        // Player list
+        var playerNames = GetConnectedPlayerNames();
+        Debug.Log("Players in room: " + string.Join(", ", playerNames.ToArray()));
+
+        Debug.Log("========================");
+    }
+
+    void HandlePushToTalk()
+    {
+        if (!isPushToTalkMode) return;
+
+        if (Input.GetKeyDown(pushToTalkKey))
+        {
+            EnableMicrophone();
+        }
+        else if (Input.GetKeyUp(pushToTalkKey))
+        {
+            DisableMicrophone();
+        }
+    }
+
+    void UpdatePlayerSpeakers()
+    {
+        // Update speaker components for all players
+        Speaker[] speakers = FindObjectsByType<Speaker>(FindObjectsSortMode.None);
+        foreach (Speaker speaker in speakers)
+        {
+            // Try to get the PhotonView to identify the player
+            PhotonView photonView = speaker.GetComponent<PhotonView>();
+            if (photonView != null && photonView.Owner != null)
+            {
+                string playerId = photonView.Owner.UserId;
+                if (!string.IsNullOrEmpty(playerId))
+                {
+                    playerSpeakers[playerId] = speaker;
+
+                    // Apply mute status
+                    if (mutedPlayers.ContainsKey(playerId) && mutedPlayers[playerId])
+                    {
+                        speaker.enabled = false;
+                    }
+                    else
+                    {
+                        speaker.enabled = true;
+                    }
+                }
+            }
+        }
+    }
+
+    #region Microphone Control
+
+    public void EnableMicrophone()
+    {
+        if (voiceRecorder != null)
+        {
+            voiceRecorder.TransmitEnabled = true;
+            isMicrophoneEnabled = true;
+
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Microphone enabled - You can now speak!");
+        }
+        else
+        {
+            if (showDebugLogs)
+                Debug.LogError("[VoiceChat] Cannot enable microphone - Recorder not initialized!");
+        }
+    }
+
+    public void DisableMicrophone()
+    {
+        if (voiceRecorder != null)
+        {
+            voiceRecorder.TransmitEnabled = false;
+            isMicrophoneEnabled = false;
+
+            if (showDebugLogs)
+                Debug.Log("[VoiceChat] Microphone disabled");
+        }
+    }
+
+    public void ToggleMicrophone()
+    {
+        if (isMicrophoneEnabled)
+            DisableMicrophone();
+        else
+            EnableMicrophone();
+    }
+
+    public bool IsMicrophoneEnabled()
+    {
+        return isMicrophoneEnabled;
+    }
+
+    #endregion
+
+    #region Mute System
+
+    public void MutePlayer(string playerId)
+    {
+        if (string.IsNullOrEmpty(playerId)) return;
+
+        mutedPlayers[playerId] = true;
+
+        // Apply mute to existing speaker
+        if (playerSpeakers.ContainsKey(playerId))
+        {
+            playerSpeakers[playerId].enabled = false;
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Player muted: " + playerId);
+    }
+
+    public void UnmutePlayer(string playerId)
+    {
+        if (string.IsNullOrEmpty(playerId)) return;
+
+        mutedPlayers[playerId] = false;
+
+        // Apply unmute to existing speaker
+        if (playerSpeakers.ContainsKey(playerId))
+        {
+            playerSpeakers[playerId].enabled = true;
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Player unmuted: " + playerId);
+    }
+
+    public void MuteAllPlayers()
+    {
+        // Get all players from PhotonNetwork directly
+        foreach (var player in PhotonNetwork.PlayerList)
+        {
+            if (player != PhotonNetwork.LocalPlayer) // Don't mute yourself
+            {
+                MutePlayer(player.UserId);
+            }
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] All players muted");
+    }
+
+    public void UnmuteAllPlayers()
+    {
+        // Get all players from PhotonNetwork directly
+        foreach (var player in PhotonNetwork.PlayerList)
+        {
+            if (player != PhotonNetwork.LocalPlayer) // Don't unmute yourself
+            {
+                UnmutePlayer(player.UserId);
+            }
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] All players unmuted");
+    }
+
+    public bool IsPlayerMuted(string playerId)
+    {
+        if (string.IsNullOrEmpty(playerId)) return false;
+        return mutedPlayers.ContainsKey(playerId) && mutedPlayers[playerId];
+    }
+
+    public List<string> GetMutedPlayerIds()
+    {
+        List<string> mutedList = new List<string>();
+        foreach (var kvp in mutedPlayers)
+        {
+            if (kvp.Value) // if muted
+                mutedList.Add(kvp.Key);
+        }
+        return mutedList;
+    }
+
+    #endregion
+
+    #region Volume Control
+
+    public void SetMicrophoneVolume(float volume)
+    {
+        microphoneVolume = Mathf.Clamp(volume, 0f, 2f);
+        if (voiceRecorder != null)
+        {
+            // Handle different Photon Voice versions
+            try
+            {
+                var recorderType = voiceRecorder.GetType();
+                var amplificationProperty = recorderType.GetProperty("AmplificationFactor");
+                if (amplificationProperty != null)
+                {
+                    amplificationProperty.SetValue(voiceRecorder, microphoneVolume);
+                }
+            }
+            catch
+            {
+                if (showDebugLogs)
+                    Debug.LogWarning("[VoiceChat] Could not set microphone volume - property not available in this Photon Voice version");
+            }
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Microphone volume set to " + microphoneVolume);
+    }
+
+    public void SetSpeakerVolume(float volume)
+    {
+        speakerVolume = Mathf.Clamp(volume, 0f, 2f);
+        if (audioSource != null)
+        {
+            audioSource.volume = speakerVolume;
+        }
+
+        if (showDebugLogs)
+            Debug.Log("[VoiceChat] Speaker volume set to " + speakerVolume);
+    }
+
+    public float GetMicrophoneVolume()
+    {
+        return microphoneVolume;
+    }
+
+    public float GetSpeakerVolume()
+    {
+        return speakerVolume;
+    }
+
+    #endregion
+
+    #region Utility Methods
+
+    public bool IsVoiceSystemReady()
+    {
+        return isVoiceSystemReady;
+    }
+
+    public float GetMicrophoneLevel()
+    {
+        if (voiceRecorder != null)
+        {
+            try
+            {
+                var levelMeter = voiceRecorder.LevelMeter;
+                if (levelMeter != null)
+                {
+                    // Handle different Photon Voice versions
+                    var levelMeterType = levelMeter.GetType();
+                    var currentAvgAmpProperty = levelMeterType.GetProperty("CurrentAvgAmp");
+                    if (currentAvgAmpProperty != null)
+                    {
+                        return (float)currentAvgAmpProperty.GetValue(levelMeter);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback for different Photon Voice versions
+            }
+        }
+        return 0f;
+    }
+
+    public int GetConnectedPlayersCount()
+    {
+        if (PhotonNetwork.CurrentRoom != null)
+            return PhotonNetwork.CurrentRoom.PlayerCount;
+        return 0;
+    }
+
+    public List<string> GetConnectedPlayerNames()
+    {
+        List<string> playerNames = new List<string>();
+        if (PhotonNetwork.CurrentRoom != null)
+        {
+            foreach (var player in PhotonNetwork.PlayerList)
+            {
+                playerNames.Add(player.NickName);
+            }
+        }
+        return playerNames;
+    }
+
+    #endregion
+}

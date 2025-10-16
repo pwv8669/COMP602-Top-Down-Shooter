@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "326056352183",
+    "project_id": "top-down-shooter-b59e5",
+    "storage_bucket": "top-down-shooter-b59e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326056352183:android:d8b904a6e27aefb7f37032",
+        "android_client_info": {
+          "package_name": "com.mygame.topdownshooter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuWTpb24qhckEUO9sZRiRNHpOebtBYkEw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
