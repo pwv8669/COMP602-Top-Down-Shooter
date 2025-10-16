@@ -151,5 +151,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+COMP604-Top-Down-Shooter/nul
 
-# End of https://www.toptal.com/developers/gitignore/api/unity,macos,visualstudiocode,windowsCOMP604-Top-Down-Shooter/nul
+# End of https://www.toptal.com/developers/gitignore/api/unity,macos,visualstudiocode,windows
