@@ -54,7 +54,7 @@ public class VoiceChat : MonoBehaviour
     IEnumerator WaitForRoomAndInitialize()
     {
         // Wait until connected and in a room
-        while (multiplayerManager == null || !multiplayerManager.IsInRoom())
+        while (multiplayerManager == null || !multiplayerManager.IsInRoom)
         {
             if (showDebugLogs && multiplayerManager != null)
                 Debug.Log("[VoiceChat] Waiting for room connection...");
