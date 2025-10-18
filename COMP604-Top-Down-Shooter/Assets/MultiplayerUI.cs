@@ -26,9 +26,14 @@ public class MultiplayerUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI playerCountText;
     [SerializeField] private TextMeshProUGUI playerListText;
     [SerializeField] private Button leaveRoomButton;
+    [SerializeField] private Button startGameButton;
 
     private Multiplayer multiplayerManager;
     private bool isInitialized = false;
+
+    // Cache variables for change detection
+    private int lastPlayerCount = -1;
+    private bool lastIsMasterClient = false;
 
     void Start()
     {
@@ -53,6 +58,9 @@ public class MultiplayerUI : MonoBehaviour
 
         if (leaveRoomButton != null)
             leaveRoomButton.onClick.AddListener(OnLeaveRoomClicked);
+
+        if (startGameButton != null)
+            startGameButton.onClick.AddListener(OnStartGameClicked);
 
         // CRITICAL: Show only connection panel at start
         ShowConnectionPanel();
@@ -80,6 +88,9 @@ public class MultiplayerUI : MonoBehaviour
 
         if (leaveRoomButton != null)
             leaveRoomButton.onClick.RemoveListener(OnLeaveRoomClicked);
+
+        if (startGameButton != null)
+            startGameButton.onClick.RemoveListener(OnStartGameClicked);
     }
 
     void Update()
@@ -87,10 +98,30 @@ public class MultiplayerUI : MonoBehaviour
         if (!isInitialized || multiplayerManager == null)
             return;
 
-        // Update room info if in a room
+        // Update room info only when in a room and values changed
         if (PhotonNetwork.InRoom)
         {
-            UpdateRoomInfo();
+            // UpdateRoomInfo only if player count changed
+            int currentPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
+            if (currentPlayerCount != lastPlayerCount)
+            {
+                lastPlayerCount = currentPlayerCount;
+                UpdateRoomInfo();
+            }
+
+            // UpdateRoomInfo only if host status changed
+            bool currentIsMasterClient = PhotonNetwork.IsMasterClient;
+            if (currentIsMasterClient != lastIsMasterClient)
+            {
+                lastIsMasterClient = currentIsMasterClient;
+                UpdateStartButtonVisibility();
+            }
+        }
+        else
+        {
+            // Cashe reset when left room
+            lastPlayerCount = -1;
+            lastIsMasterClient = false;
         }
     }
 
@@ -153,8 +184,17 @@ public class MultiplayerUI : MonoBehaviour
         // Show room panel
         ShowRoomPanel();
 
+        // Cashe reset 
+        lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
+        lastIsMasterClient = PhotonNetwork.IsMasterClient;
+
+        // Room updates directly
         UpdateRoomInfo();
         UpdatePlayerList();
+        UpdateStartButtonVisibility();
+
+        Debug.Log($"[MultiplayerUI] Room Code: {PhotonNetwork.CurrentRoom.Name}");
+        Debug.Log($"[MultiplayerUI] Player Count: {PhotonNetwork.CurrentRoom.PlayerCount}");
     }
 
     public void OnLeftRoom()
@@ -171,13 +211,23 @@ public class MultiplayerUI : MonoBehaviour
     public void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log($"[MultiplayerUI] Player joined: {newPlayer.NickName}");
+
+        // Change detection player number
+        lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
+
         UpdatePlayerList();
+        UpdateStartButtonVisibility();
     }
 
     public void OnPlayerLeftRoom(Player otherPlayer)
     {
         Debug.Log($"[MultiplayerUI] Player left: {otherPlayer.NickName}");
+
+        // Change detection player number
+        lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
+
         UpdatePlayerList();
+        UpdateStartButtonVisibility();
     }
 
     #endregion
@@ -235,6 +285,22 @@ public class MultiplayerUI : MonoBehaviour
         multiplayerManager.LeaveRoom();
     }
 
+    private void OnStartGameClicked()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            Debug.LogWarning("[MultiplayerUI] Only host can start the game!");
+            return;
+        }
+
+        Debug.Log("[MultiplayerUI] Host starting game...");
+
+        // Logic to start the game (scene transition, etc.)
+        // Example: PhotonNetwork.LoadLevel("GameScene");
+
+        UpdateStatus("Starting game...");
+    }
+
     #endregion
 
     #region UI Updates
@@ -264,6 +330,7 @@ public class MultiplayerUI : MonoBehaviour
         {
             string roomName = PhotonNetwork.CurrentRoom.Name;
             roomCodeText.text = $"Room Code: {roomName}";
+            Debug.Log($"[MultiplayerUI] Updated room code display: {roomName}");
         }
 
         // Update player count
@@ -272,6 +339,7 @@ public class MultiplayerUI : MonoBehaviour
             int currentPlayers = PhotonNetwork.CurrentRoom.PlayerCount;
             int maxPlayers = PhotonNetwork.CurrentRoom.MaxPlayers;
             playerCountText.text = $"Players: {currentPlayers}/{maxPlayers}";
+            Debug.Log($"[MultiplayerUI] Updated player count: {currentPlayers}/{maxPlayers}");
         }
     }
 
@@ -284,13 +352,29 @@ public class MultiplayerUI : MonoBehaviour
 
         foreach (Player player in PhotonNetwork.PlayerList)
         {
-            string indicator = player.IsMasterClient ? "★" : "•";
+            string indicator = player.IsMasterClient ? "[HOST]" : "-";
             playerList += $"{indicator} {player.NickName}\n";
         }
 
         playerListText.text = playerList;
 
         Debug.Log($"[MultiplayerUI] Updated player list:\n{playerList}");
+    }
+
+    private void UpdateStartButtonVisibility()
+    {
+        if (startGameButton == null)
+            return;
+
+        // Only host (MasterClient) can see the start button
+        bool isMasterClient = PhotonNetwork.IsMasterClient;
+        startGameButton.gameObject.SetActive(isMasterClient);
+        startGameButton.interactable = isMasterClient;
+
+        if (isMasterClient)
+        {
+            Debug.Log("[MultiplayerUI] You are the host - start button enabled");
+        }
     }
 
     private void UpdateStatus(string message)
