@@ -1,12 +1,32 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun; // Soyun Edit this part - for PhotonView and muliplayer support
 
 public class PlayerLookAtMouse : MonoBehaviour
 {
     public Camera mainCamera;
+    private PhotonView photonView; // Soyun Edit this part
 
+    //Soyun Edit this part
+    void Start()
+    {
+        photonView = GetComponent<PhotonView>();
+
+        // Only set camera for local player
+        if (photonView != null && photonView.IsMine)
+        {
+            mainCamera = Camera.main;
+        }
+    }
     void Update()
     {
+        // Soyun Edit this part - Only control if this is MY player
+        if (photonView != null && !photonView.IsMine)
+            return;
+
+        if (mainCamera == null)
+            return;
+
         // Get mouse position on screen.
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         // Create a ray from the camera to the mouse.

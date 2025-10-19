@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun; // Soyun  edit this part
 
 public class EnemySpawner : MonoBehaviour
 {
@@ -8,6 +9,11 @@ public class EnemySpawner : MonoBehaviour
     void Start()
     {
         Debug.Log("EnemySpawner started");
+
+        //Soyun edit this part
+        if (!PhotonNetwork.IsMasterClient)
+            return;
+
         SpawnEnemyAtPlayerPosition();
     }
     
@@ -26,6 +32,10 @@ public class EnemySpawner : MonoBehaviour
     
     void Update()
     {
+        // Soyun edit this part
+        if (!PhotonNetwork.IsMasterClient)
+            return;
+
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
             Debug.Log("T key pressed - spawning enemy");

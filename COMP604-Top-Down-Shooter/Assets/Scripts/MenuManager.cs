@@ -81,7 +81,13 @@ public class MenuManager : MonoBehaviour
     // ===== MENU NAVIGATION FUNCTIONS =====
     public void PlayGame()
     {
-        SceneManager.LoadScene("SampleScene");
+        // Soyun edited - for single player, clear multiplayer prefs
+        PlayerPrefs.DeleteKey("MultiplayerMode");
+        PlayerPrefs.DeleteKey("RoomCode");
+        PlayerPrefs.Save();
+
+        Debug.Log("[MenuManager] Starting single player game");
+        SceneManager.LoadScene("SinglePlayerScene");
     }
 
     public void ShowSettings()
@@ -93,9 +99,12 @@ public class MenuManager : MonoBehaviour
 
     public void ShowHostMultiplayer()
     {
-        HideAllPanels();
-        if (hostMultiplayerPanel != null) hostMultiplayerPanel.SetActive(true);
-        HideTitle();
+        // Soyun edit this part - Enter host multiplayer panel
+        PlayerPrefs.SetString("MultiplayerMode", "Host");
+        PlayerPrefs.Save();
+
+        Debug.Log("[MenuManager] Loading game as HOST");
+        SceneManager.LoadScene("SampleScene"); //Soyun edit this part
     }
 
     public void ShowJoinMultiplayer()
@@ -103,6 +112,33 @@ public class MenuManager : MonoBehaviour
         HideAllPanels();
         if (joinMultiplayerPanel != null) joinMultiplayerPanel.SetActive(true);
         HideTitle();
+
+        Debug.Log("[MenuManager] Showing join multiplayer panel"); //Soyun edit this part
+    }
+
+    public void ConfirmJoinMultiplayer()
+    {
+        // Soyun add this part
+        // When the "Confirm" button is pressed in the Join panel
+        // Bring room code from InputCodeText
+        GameObject inputObj = GameObject.Find("InputCodeText");
+        if (inputObj != null)
+        {
+            UnityEngine.UI.InputField inputField = inputObj.GetComponent<UnityEngine.UI.InputField>();
+            if (inputField != null && !string.IsNullOrEmpty(inputField.text))
+            {
+                string roomCode = inputField.text.Trim().ToUpper();
+                PlayerPrefs.SetString("MultiplayerMode", "Join");
+                PlayerPrefs.SetString("RoomCode", roomCode);
+                PlayerPrefs.Save();
+
+                Debug.Log($"[MenuManager] Joining room: {roomCode}");
+                SceneManager.LoadScene("SampleScene");
+                return;
+            }
+        }
+
+        Debug.LogWarning("[MenuManager] No room code entered!");
     }
 
     public void ShowMainMenu()

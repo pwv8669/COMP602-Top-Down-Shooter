@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun; //Soyun Edit this part
 
 public class GunSystem : MonoBehaviour
 {
@@ -21,6 +22,8 @@ public class GunSystem : MonoBehaviour
     public AudioSource audioSource;         // assign in inspector
     public AudioClip audioClip;           // assign in inspector
 
+    private PhotonView photonView; //Soyun Edit this part
+
     // runtime
     int bulletsLeft;
     int shotsRemainingThisTap;
@@ -32,11 +35,23 @@ public class GunSystem : MonoBehaviour
     void Awake()
     {
         bulletsLeft = magazineSize;
-        if (!mainCamera) mainCamera = Camera.main;
+        //Soyun Edit this part
+        photonView = GetComponent<PhotonView>();
+
+        // Only set camera for local player
+        if (photonView != null && photonView.IsMine)
+        {
+            if (!mainCamera) mainCamera = Camera.main;
+        }
     }
 
     void Update()
     {
+        // Soyun Edit this part
+        // Only control if this is MY player
+        if (photonView != null && !photonView.IsMine)
+            return;
+
         // Direct input handling
         if (Keyboard.current.rKey.wasPressedThisFrame)
         {

@@ -3,23 +3,15 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 using Photon.Realtime;
-using System.Collections.Generic;
+using System.Collections;
 
 public class MultiplayerUI : MonoBehaviour
 {
+    // Removed connectionPanel and menuPanel
     [Header("Panel References")]
-    [SerializeField] private GameObject connectionPanel;
-    [SerializeField] private GameObject menuPanel;
     [SerializeField] private GameObject roomPanel;
 
-    [Header("Connection Panel")]
-    [SerializeField] private TextMeshProUGUI connectionStatusText;
-
-    [Header("Menu Panel")]
-    [SerializeField] private Button createRoomButton;
-    [SerializeField] private TMP_InputField roomCodeInput;
-    [SerializeField] private Button joinRoomButton;
-    [SerializeField] private TextMeshProUGUI menuStatusText;
+    // Removed Connection/Menu related UI
 
     [Header("Room Panel")]
     [SerializeField] private TextMeshProUGUI roomCodeText;
@@ -27,6 +19,10 @@ public class MultiplayerUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI playerListText;
     [SerializeField] private Button leaveRoomButton;
     [SerializeField] private Button startGameButton;
+
+    // Added status text for displaying connection and room status
+    [Header("Status")]
+    [SerializeField] private TextMeshProUGUI statusText;
 
     private Multiplayer multiplayerManager;
     private bool isInitialized = false;
@@ -50,25 +46,20 @@ public class MultiplayerUI : MonoBehaviour
         multiplayerManager.OnReadyForRoomOperations += OnReadyForRoomOperations;
 
         // Setup button listeners
-        if (createRoomButton != null)
-            createRoomButton.onClick.AddListener(OnCreateRoomClicked);
-
-        if (joinRoomButton != null)
-            joinRoomButton.onClick.AddListener(OnJoinRoomClicked);
-
         if (leaveRoomButton != null)
             leaveRoomButton.onClick.AddListener(OnLeaveRoomClicked);
 
         if (startGameButton != null)
             startGameButton.onClick.AddListener(OnStartGameClicked);
 
-        // CRITICAL: Show only connection panel at start
-        ShowConnectionPanel();
+        // Hide roomPanel at start while waiting for connection
+        if (roomPanel != null)
+            roomPanel.SetActive(false);
 
         UpdateStatus("Connecting to server...");
 
         isInitialized = true;
-        Debug.Log("[MultiplayerUI] UI initialized - showing connection panel only");
+        Debug.Log("[MultiplayerUI] UI initialized - waiting for connection");
     }
 
     void OnDestroy()
@@ -80,12 +71,6 @@ public class MultiplayerUI : MonoBehaviour
         }
 
         // Remove button listeners
-        if (createRoomButton != null)
-            createRoomButton.onClick.RemoveListener(OnCreateRoomClicked);
-
-        if (joinRoomButton != null)
-            joinRoomButton.onClick.RemoveListener(OnJoinRoomClicked);
-
         if (leaveRoomButton != null)
             leaveRoomButton.onClick.RemoveListener(OnLeaveRoomClicked);
 
@@ -101,7 +86,6 @@ public class MultiplayerUI : MonoBehaviour
         // Update room info only when in a room and values changed
         if (PhotonNetwork.InRoom)
         {
-            // UpdateRoomInfo only if player count changed
             int currentPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
             if (currentPlayerCount != lastPlayerCount)
             {
@@ -109,7 +93,6 @@ public class MultiplayerUI : MonoBehaviour
                 UpdateRoomInfo();
             }
 
-            // UpdateRoomInfo only if host status changed
             bool currentIsMasterClient = PhotonNetwork.IsMasterClient;
             if (currentIsMasterClient != lastIsMasterClient)
             {
@@ -119,62 +102,49 @@ public class MultiplayerUI : MonoBehaviour
         }
         else
         {
-            // Cashe reset when left room
             lastPlayerCount = -1;
             lastIsMasterClient = false;
         }
     }
 
-    #region Panel Management
+    #region Multiplayer Callbacks
 
-    private void ShowConnectionPanel()
+    // Automatically create or join room when connected
+    private void OnReadyForRoomOperations()
     {
-        SetPanelActive(connectionPanel, true);
-        SetPanelActive(menuPanel, false);
-        SetPanelActive(roomPanel, false);
+        Debug.Log("[MultiplayerUI] Connected! Checking multiplayer mode...");
 
-        Debug.Log("[MultiplayerUI] Showing connection panel");
-    }
+        string mode = PlayerPrefs.GetString("MultiplayerMode", "");
 
-    private void ShowMenuPanel()
-    {
-        SetPanelActive(connectionPanel, false);
-        SetPanelActive(menuPanel, true);
-        SetPanelActive(roomPanel, false);
-
-        Debug.Log("[MultiplayerUI] Showing menu panel");
-    }
-
-    private void ShowRoomPanel()
-    {
-        SetPanelActive(connectionPanel, false);
-        SetPanelActive(menuPanel, false);
-        SetPanelActive(roomPanel, true);
-
-        Debug.Log("[MultiplayerUI] Showing room panel");
-    }
-
-    private void SetPanelActive(GameObject panel, bool active)
-    {
-        if (panel != null)
+        if (mode == "Host")
         {
-            panel.SetActive(active);
+            PlayerPrefs.DeleteKey("MultiplayerMode");
+            UpdateStatus("Creating room...");
+            StartCoroutine(AutoCreateRoom());
+        }
+        else if (mode == "Join")
+        {
+            string roomCode = PlayerPrefs.GetString("RoomCode", "");
+            PlayerPrefs.DeleteKey("MultiplayerMode");
+            PlayerPrefs.DeleteKey("RoomCode");
+
+            if (!string.IsNullOrEmpty(roomCode))
+            {
+                UpdateStatus($"Joining room {roomCode}...");
+                multiplayerManager.JoinRoom(roomCode);
+            }
+            else
+            {
+                UpdateStatus("Error: No room code!");
+            }
         }
     }
 
-    #endregion
-
-    #region Multiplayer Callbacks
-
-    private void OnReadyForRoomOperations()
+    // Auto create room with delay
+    private IEnumerator AutoCreateRoom()
     {
-        Debug.Log("[MultiplayerUI] Ready! Showing menu panel.");
-
-        // Hide connection panel and show menu
-        ShowMenuPanel();
-
-        UpdateStatus("Ready! Create or join a room.");
-        UpdateButtonStates();
+        yield return new WaitForSeconds(0.5f);
+        multiplayerManager.CreateRoom();
     }
 
     public void OnJoinedRoom()
@@ -182,16 +152,16 @@ public class MultiplayerUI : MonoBehaviour
         Debug.Log("[MultiplayerUI] Joined room - showing room panel");
 
         // Show room panel
-        ShowRoomPanel();
+        if (roomPanel != null)
+            roomPanel.SetActive(true);
 
-        // Cashe reset 
         lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
         lastIsMasterClient = PhotonNetwork.IsMasterClient;
 
-        // Room updates directly
         UpdateRoomInfo();
         UpdatePlayerList();
         UpdateStartButtonVisibility();
+        UpdateStatus("In room!");
 
         Debug.Log($"[MultiplayerUI] Room Code: {PhotonNetwork.CurrentRoom.Name}");
         Debug.Log($"[MultiplayerUI] Player Count: {PhotonNetwork.CurrentRoom.PlayerCount}");
@@ -199,22 +169,16 @@ public class MultiplayerUI : MonoBehaviour
 
     public void OnLeftRoom()
     {
-        Debug.Log("[MultiplayerUI] Left room - returning to menu");
+        Debug.Log("[MultiplayerUI] Left room - returning to main menu");
 
-        // Return to menu panel
-        ShowMenuPanel();
-
-        UpdateStatus("Left room. Create or join another room.");
-        UpdateButtonStates();
+        // Return to main menu scene
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }
 
     public void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log($"[MultiplayerUI] Player joined: {newPlayer.NickName}");
-
-        // Change detection player number
         lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
-
         UpdatePlayerList();
         UpdateStartButtonVisibility();
     }
@@ -222,10 +186,7 @@ public class MultiplayerUI : MonoBehaviour
     public void OnPlayerLeftRoom(Player otherPlayer)
     {
         Debug.Log($"[MultiplayerUI] Player left: {otherPlayer.NickName}");
-
-        // Change detection player number
         lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
-
         UpdatePlayerList();
         UpdateStartButtonVisibility();
     }
@@ -234,53 +195,12 @@ public class MultiplayerUI : MonoBehaviour
 
     #region Button Handlers
 
-    private void OnCreateRoomClicked()
-    {
-        if (multiplayerManager == null || !multiplayerManager.IsConnectedToPhoton())
-        {
-            UpdateStatus("Not connected to server!");
-            return;
-        }
-
-        Debug.Log("[MultiplayerUI] Create room button clicked");
-
-        UpdateStatus("Creating room...");
-        createRoomButton.interactable = false;
-
-        multiplayerManager.CreateRoom();
-    }
-
-    private void OnJoinRoomClicked()
-    {
-        if (multiplayerManager == null || !multiplayerManager.IsConnectedToPhoton())
-        {
-            UpdateStatus("Not connected to server!");
-            return;
-        }
-
-        if (roomCodeInput == null || string.IsNullOrEmpty(roomCodeInput.text))
-        {
-            UpdateStatus("Please enter a room code!");
-            return;
-        }
-
-        string roomCode = roomCodeInput.text.Trim().ToUpper();
-
-        Debug.Log($"[MultiplayerUI] Join room button clicked: {roomCode}");
-
-        UpdateStatus($"Joining room {roomCode}...");
-        joinRoomButton.interactable = false;
-
-        multiplayerManager.JoinRoom(roomCode);
-    }
-
     private void OnLeaveRoomClicked()
     {
         if (multiplayerManager == null)
             return;
 
         Debug.Log("[MultiplayerUI] Leave room button clicked");
-
         leaveRoomButton.interactable = false;
         multiplayerManager.LeaveRoom();
     }
@@ -294,52 +214,32 @@ public class MultiplayerUI : MonoBehaviour
         }
 
         Debug.Log("[MultiplayerUI] Host starting game...");
-
-        // Logic to start the game (scene transition, etc.)
-        // Example: PhotonNetwork.LoadLevel("GameScene");
-
         UpdateStatus("Starting game...");
+
+        // Add game start logic here
+        // Example: PhotonNetwork.LoadLevel("GameScene");
     }
 
     #endregion
 
     #region UI Updates
 
-    private void UpdateButtonStates()
-    {
-        bool isConnected = multiplayerManager != null && multiplayerManager.IsConnectedToPhoton();
-        bool isInRoom = PhotonNetwork.InRoom;
-
-        if (createRoomButton != null)
-            createRoomButton.interactable = isConnected && !isInRoom;
-
-        if (joinRoomButton != null)
-            joinRoomButton.interactable = isConnected && !isInRoom;
-
-        if (leaveRoomButton != null)
-            leaveRoomButton.interactable = isInRoom;
-    }
-
     private void UpdateRoomInfo()
     {
         if (!PhotonNetwork.InRoom)
             return;
 
-        // Update room code
         if (roomCodeText != null)
         {
             string roomName = PhotonNetwork.CurrentRoom.Name;
             roomCodeText.text = $"Room Code: {roomName}";
-            Debug.Log($"[MultiplayerUI] Updated room code display: {roomName}");
         }
 
-        // Update player count
         if (playerCountText != null)
         {
             int currentPlayers = PhotonNetwork.CurrentRoom.PlayerCount;
             int maxPlayers = PhotonNetwork.CurrentRoom.MaxPlayers;
             playerCountText.text = $"Players: {currentPlayers}/{maxPlayers}";
-            Debug.Log($"[MultiplayerUI] Updated player count: {currentPlayers}/{maxPlayers}");
         }
     }
 
@@ -357,8 +257,6 @@ public class MultiplayerUI : MonoBehaviour
         }
 
         playerListText.text = playerList;
-
-        Debug.Log($"[MultiplayerUI] Updated player list:\n{playerList}");
     }
 
     private void UpdateStartButtonVisibility()
@@ -366,31 +264,17 @@ public class MultiplayerUI : MonoBehaviour
         if (startGameButton == null)
             return;
 
-        // Only host (MasterClient) can see the start button
         bool isMasterClient = PhotonNetwork.IsMasterClient;
         startGameButton.gameObject.SetActive(isMasterClient);
         startGameButton.interactable = isMasterClient;
-
-        if (isMasterClient)
-        {
-            Debug.Log("[MultiplayerUI] You are the host - start button enabled");
-        }
     }
 
     private void UpdateStatus(string message)
     {
-        // Update connection status text
-        if (connectionStatusText != null && connectionPanel.activeSelf)
+        if (statusText != null)
         {
-            connectionStatusText.text = message;
+            statusText.text = message;
         }
-
-        // Update menu status text
-        if (menuStatusText != null && menuPanel.activeSelf)
-        {
-            menuStatusText.text = message;
-        }
-
         Debug.Log($"[MultiplayerUI] Status: {message}");
     }
 
@@ -402,34 +286,26 @@ public class MultiplayerUI : MonoBehaviour
     {
         UpdateStatus($"Connection failed: {reason}");
 
-        // Stay on connection panel and show error
-        ShowConnectionPanel();
-
-        if (createRoomButton != null)
-            createRoomButton.interactable = false;
-
-        if (joinRoomButton != null)
-            joinRoomButton.interactable = false;
+        // Return to main menu on connection failure
+        StartCoroutine(ReturnToMenuAfterDelay(3f));
     }
 
     public void OnJoinRoomFailed(string reason)
     {
         UpdateStatus($"Failed to join room: {reason}");
-
-        // Return to menu panel
-        ShowMenuPanel();
-
-        UpdateButtonStates();
+        StartCoroutine(ReturnToMenuAfterDelay(3f));
     }
 
     public void OnCreateRoomFailed(string reason)
     {
         UpdateStatus($"Failed to create room: {reason}");
+        StartCoroutine(ReturnToMenuAfterDelay(3f));
+    }
 
-        // Return to menu panel
-        ShowMenuPanel();
-
-        UpdateButtonStates();
+    private IEnumerator ReturnToMenuAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }
 
     #endregion
