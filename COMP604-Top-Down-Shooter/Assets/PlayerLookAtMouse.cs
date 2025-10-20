@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Photon.Pun; // Soyun Edit this part - for PhotonView and muliplayer support
+using UnityEngine.EventSystems; // Soyun add this part
 
 public class PlayerLookAtMouse : MonoBehaviour
 {
@@ -25,6 +26,10 @@ public class PlayerLookAtMouse : MonoBehaviour
             return;
 
         if (mainCamera == null)
+            return;
+
+        // Soyun Edit this part - Don't rotate when mouse is over UI
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
         // Get mouse position on screen.

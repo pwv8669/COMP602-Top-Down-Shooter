@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Photon.Pun; //Soyun Edit this part
+using UnityEngine.EventSystems; // Soyun add this part
 
 public class GunSystem : MonoBehaviour
 {
@@ -51,6 +52,12 @@ public class GunSystem : MonoBehaviour
         // Only control if this is MY player
         if (photonView != null && !photonView.IsMine)
             return;
+
+        // Check if mouse is over UI
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return; // Don't process gun input on UI
+        }
 
         // Direct input handling
         if (Keyboard.current.rKey.wasPressedThisFrame)

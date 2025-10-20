@@ -4,14 +4,12 @@ using TMPro;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class MultiplayerUI : MonoBehaviour
 {
-    // Removed connectionPanel and menuPanel
     [Header("Panel References")]
     [SerializeField] private GameObject roomPanel;
-
-    // Removed Connection/Menu related UI
 
     [Header("Room Panel")]
     [SerializeField] private TextMeshProUGUI roomCodeText;
@@ -20,7 +18,6 @@ public class MultiplayerUI : MonoBehaviour
     [SerializeField] private Button leaveRoomButton;
     [SerializeField] private Button startGameButton;
 
-    // Added status text for displaying connection and room status
     [Header("Status")]
     [SerializeField] private TextMeshProUGUI statusText;
 
@@ -46,11 +43,30 @@ public class MultiplayerUI : MonoBehaviour
         multiplayerManager.OnReadyForRoomOperations += OnReadyForRoomOperations;
 
         // Setup button listeners
+        Debug.Log("[DEBUG] Setting up button listeners...");
+
+        // Setup button listeners
         if (leaveRoomButton != null)
+        {
+            Debug.Log("[DEBUG] Leave button found! Adding listener..."); // ← 추가!
             leaveRoomButton.onClick.AddListener(OnLeaveRoomClicked);
+            Debug.Log($"[DEBUG] Leave button interactable: {leaveRoomButton.interactable}"); // ← 추가!
+        }
+        else
+        {
+            Debug.LogError("[DEBUG] Leave button is NULL!"); // ← 추가!
+        }
 
         if (startGameButton != null)
+        {
+            Debug.Log("[DEBUG] Start button found! Adding listener..."); // ← 추가!
             startGameButton.onClick.AddListener(OnStartGameClicked);
+            Debug.Log($"[DEBUG] Start button interactable: {startGameButton.interactable}"); // ← 추가!
+        }
+        else
+        {
+            Debug.LogError("[DEBUG] Start button is NULL!"); // ← 추가!
+        }
 
         // Hide roomPanel at start while waiting for connection
         if (roomPanel != null)
@@ -151,9 +167,23 @@ public class MultiplayerUI : MonoBehaviour
     {
         Debug.Log("[MultiplayerUI] Joined room - showing room panel");
 
+        // Force unlock cursor BEFORE showing UI
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         // Show room panel
         if (roomPanel != null)
             roomPanel.SetActive(true);
+
+        // Force unlock again to be sure
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        Debug.Log($"[DEBUG] Cursor unlocked! lockState: {Cursor.lockState}, visible: {Cursor.visible}");
+
+        // Re-enable leave button when joined room
+        if (leaveRoomButton != null)
+            leaveRoomButton.interactable = true;
 
         lastPlayerCount = PhotonNetwork.CurrentRoom.PlayerCount;
         lastIsMasterClient = PhotonNetwork.IsMasterClient;
@@ -171,8 +201,16 @@ public class MultiplayerUI : MonoBehaviour
     {
         Debug.Log("[MultiplayerUI] Left room - returning to main menu");
 
-        // Return to main menu scene
-        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        if (roomPanel != null)
+            roomPanel.SetActive(false);
+
+        // Keep cursor visible and free for menu
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        // Return to main menu
+        SceneManager.LoadScene("MainMenu");
+
     }
 
     public void OnPlayerEnteredRoom(Player newPlayer)
@@ -197,16 +235,30 @@ public class MultiplayerUI : MonoBehaviour
 
     private void OnLeaveRoomClicked()
     {
+        Debug.Log("=== LEAVE BUTTON CLICKED! ===");
+        Debug.Log($"[DEBUG] Time.unscaledTime: {Time.unscaledTime}");
+        Debug.Log($"[DEBUG] roomPanel active: {roomPanel != null && roomPanel.activeSelf}");
+        Debug.Log($"[DEBUG] Button interactable: {leaveRoomButton != null && leaveRoomButton.interactable}");
+        Debug.Log($"[DEBUG] EventSystem: {UnityEngine.EventSystems.EventSystem.current != null}");
+        Debug.Log($"[DEBUG] Cursor state: lockState={Cursor.lockState}, visible={Cursor.visible}");
+
         if (multiplayerManager == null)
             return;
 
         Debug.Log("[MultiplayerUI] Leave room button clicked");
-        leaveRoomButton.interactable = false;
+
+        // Disable button temporarily to prevent multiple clicks
+        if (leaveRoomButton != null)
+            leaveRoomButton.interactable = false;
+
+        UpdateStatus("Leaving room...");
         multiplayerManager.LeaveRoom();
     }
 
     private void OnStartGameClicked()
     {
+        Debug.Log("=== START BUTTON CLICKED! ===");
+
         if (!PhotonNetwork.IsMasterClient)
         {
             Debug.LogWarning("[MultiplayerUI] Only host can start the game!");
@@ -216,8 +268,12 @@ public class MultiplayerUI : MonoBehaviour
         Debug.Log("[MultiplayerUI] Host starting game...");
         UpdateStatus("Starting game...");
 
-        // Add game start logic here
-        // Example: PhotonNetwork.LoadLevel("GameScene");
+        // Disable button to prevent multiple clicks
+        if (startGameButton != null)
+            startGameButton.interactable = false;
+
+        // Call StartGame from Multiplayer manager
+        multiplayerManager.StartGame();
     }
 
     #endregion
@@ -266,7 +322,9 @@ public class MultiplayerUI : MonoBehaviour
 
         bool isMasterClient = PhotonNetwork.IsMasterClient;
         startGameButton.gameObject.SetActive(isMasterClient);
-        startGameButton.interactable = isMasterClient;
+
+        // Only enable if master client and in room
+        startGameButton.interactable = isMasterClient && PhotonNetwork.InRoom;
     }
 
     private void UpdateStatus(string message)

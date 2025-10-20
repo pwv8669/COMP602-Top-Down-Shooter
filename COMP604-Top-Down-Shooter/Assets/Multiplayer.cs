@@ -10,6 +10,11 @@ public class Multiplayer : MonoBehaviourPunCallbacks
     [SerializeField] private int maxPlayersPerRoom = 4;
     [SerializeField] private string gameVersion = "1.0";
 
+    [Header("Player Spawn Settings")]
+    [SerializeField] private string playerPrefabName = "NetworkPlayer";
+    [SerializeField] private float spawnRadius = 5f;
+    [SerializeField] private float spawnHeight = 1f;
+
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
 
@@ -21,9 +26,15 @@ public class Multiplayer : MonoBehaviourPunCallbacks
 
     private int retryCount = 0;
     private MultiplayerUI uiManager;
+    private bool hasSpawnedPlayer = false;
 
     void Start()
     {
+        //CRITICAL: Unlock cursor immediately on scene load!
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Debug.Log("[Multiplayer] Cursor unlocked on scene start");
+
         // Find UI Manager
         uiManager = FindFirstObjectByType<MultiplayerUI>();
 
@@ -152,6 +163,9 @@ public class Multiplayer : MonoBehaviourPunCallbacks
         LogDebug($"[Multiplayer] Joined room: {PhotonNetwork.CurrentRoom.Name}");
         LogDebug($"[Multiplayer] Players in room: {PhotonNetwork.CurrentRoom.PlayerCount}");
 
+        // Reset spawn flag when joining a new room
+        hasSpawnedPlayer = false;
+
         // Notify UI
         if (uiManager != null)
         {
@@ -162,6 +176,9 @@ public class Multiplayer : MonoBehaviourPunCallbacks
     public override void OnLeftRoom()
     {
         LogDebug("[Multiplayer] Left room");
+
+        // Reset spawn flag
+        hasSpawnedPlayer = false;
 
         // Notify UI
         if (uiManager != null)
@@ -212,6 +229,61 @@ public class Multiplayer : MonoBehaviourPunCallbacks
         {
             uiManager.OnPlayerLeftRoom(otherPlayer);
         }
+    }
+
+    #endregion
+
+    #region Player Spawn
+
+    // Soyun edit - Simplified StartGame without RPC
+    public void StartGame()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            LogDebug("[Multiplayer] Only host can start the game");
+            return;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            LogDebug("[Multiplayer] Not in a room");
+            return;
+        }
+
+        LogDebug("[Multiplayer] Host starting game - spawning player");
+
+        SpawnMyPlayer();
+    }
+
+    // Soyun add this function
+    private void SpawnMyPlayer()
+    {
+        // Prevent spawning multiple times
+        if (hasSpawnedPlayer)
+        {
+            LogDebug("[Multiplayer] Player already spawned");
+            return;
+        }
+
+        hasSpawnedPlayer = true;
+
+        // Generate random spawn position
+        Vector3 spawnPosition = new Vector3(
+            UnityEngine.Random.Range(-spawnRadius, spawnRadius),
+            spawnHeight,
+            UnityEngine.Random.Range(-spawnRadius, spawnRadius)
+        );
+
+        LogDebug($"[Multiplayer] Spawning player at: {spawnPosition}");
+
+        // Instantiate player
+        GameObject player = PhotonNetwork.Instantiate(
+            playerPrefabName,
+            spawnPosition,
+            Quaternion.identity
+        );
+
+        LogDebug($"[Multiplayer] Player spawned: {player.name}");
     }
 
     #endregion
@@ -286,6 +358,11 @@ public class Multiplayer : MonoBehaviourPunCallbacks
             return PhotonNetwork.CurrentRoom.Name;
         }
         return string.Empty;
+    }
+
+    public bool IsMasterClient()
+    {
+        return PhotonNetwork.IsMasterClient;
     }
 
     #endregion
