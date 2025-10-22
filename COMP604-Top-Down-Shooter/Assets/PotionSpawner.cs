@@ -15,9 +15,21 @@ public class PotionSpawner : MonoBehaviour
     
     private int currentSmallPotions = 0;
     private int currentLargePotions = 0;
+    private Transform playerTransform;
     
     private void Start()
     {
+        // Find the player
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+        }
+        else
+        {
+            Debug.LogError("PotionSpawner: No player found! Make sure your player has the 'Player' tag.");
+        }
+        
         // Spawn some initial potions
         for (int i = 0; i < 3; i++)
         {
@@ -59,14 +71,16 @@ public class PotionSpawner : MonoBehaviour
             return;
         }
         
-        // SPAWN AT CAMERA POSITION instead of player position
-        Camera mainCamera = Camera.main;
-        Vector3 spawnPosition = mainCamera != null ? mainCamera.transform.position : Vector3.zero;
+        if (playerTransform == null)
+        {
+            Debug.LogWarning("PotionSpawner: No player transform found!");
+            return;
+        }
         
-        // CRITICAL FIX: Match the Z-position of your game world (player is at Z=100)
-        spawnPosition.z = 100f; // Force Z to match your game world
+        // Get random position around player
+        Vector3 spawnPosition = GetRandomSpawnPosition();
         
-        Debug.Log($"Spawning potion at CAMERA position: {spawnPosition}");
+        Debug.Log($"Spawning potion at position: {spawnPosition}");
         
         GameObject potion = Instantiate(potionPrefab, spawnPosition, Quaternion.identity);
         
@@ -92,9 +106,26 @@ public class PotionSpawner : MonoBehaviour
         Debug.Log($"Successfully spawned {(isLargePotion ? "Large" : "Small")} health potion at {spawnPosition}");
     }
     
-    // REMOVED the duplicate GetRandomSpawnPosition method since we're not using it right now
+    private Vector3 GetRandomSpawnPosition()
+    {
+        if (playerTransform == null)
+        {
+            Debug.LogError("Player transform not found!");
+            return Vector3.zero;
+        }
+        
+        // Get random point around player within spawn radius (X and Z only)
+        Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
+        
+        // Use player's Y position so potions spawn at the same height as player
+        Vector3 spawnPosition = playerTransform.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
+        
+        Debug.Log($"Player Y: {playerTransform.position.y}, Spawn Y: {spawnPosition.y}");
+        
+        return spawnPosition;
+    }
     
-    // Called when a potion is collected (we'll hook this up later)
+    // Called when a potion is collected
     public void OnPotionCollected(bool isLargePotion)
     {
         if (isLargePotion)
@@ -107,7 +138,7 @@ public class PotionSpawner : MonoBehaviour
         }
     }
 
-    private void Update()
+    /*private void Update()
     {
         // Press Space to manually spawn a potion for testing
         if (Input.GetKeyDown(KeyCode.Space))
@@ -115,9 +146,10 @@ public class PotionSpawner : MonoBehaviour
             SpawnPotion(smallHealthPotionPrefab, false);
             Debug.Log("Manually spawned potion with Space key");
             
-            // TEMPORARY: Count how many potions exist in scene
+            // Count how many potions exist in scene
             int potionCount = GameObject.FindObjectsOfType<HealthPotion>().Length;
             Debug.Log($"Total potions in scene: {potionCount}");
         }
     }
+    */
 }

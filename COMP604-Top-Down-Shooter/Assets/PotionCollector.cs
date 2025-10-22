@@ -13,13 +13,15 @@ public class PotionCollector : MonoBehaviour
         }
     }
     
-    private void OnTriggerEnter2D(Collider2D other)
+    // 3D collision detection
+    private void OnTriggerEnter(Collider other) // Collider
     {
         // Check if the collided object is a potion
         Potion potion = other.GetComponent<Potion>();
         if (potion != null && playerHealth != null)
         {
             potion.Collect(playerHealth);
+            Debug.Log($"Potion collected! Current health: {playerHealth.CurrentHealth}");
         }
     }
 }

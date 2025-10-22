@@ -10,8 +10,16 @@ public abstract class Potion : MonoBehaviour
     // This will be called when player touches the potion
     public void Collect(Health playerHealth)
     {
-        ApplyEffect(playerHealth);
-        Debug.Log($"{potionName} collected! Healing for {healAmount} health.");
+        if (playerHealth != null)
+        {
+            ApplyEffect(playerHealth);
+            Debug.Log($"{potionName} collected! Healing for {healAmount} health. New health: {playerHealth.CurrentHealth}");
+        }
+        else
+        {
+            Debug.LogError("Potion.Collect: playerHealth is null!");
+        }
+        
         Destroy(gameObject);
     }
 }
