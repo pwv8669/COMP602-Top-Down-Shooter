@@ -9,9 +9,12 @@ using UnityEngine.SceneManagement;
 public class MultiplayerUI : MonoBehaviour
 {
     [Header("Panel References")]
+    [SerializeField] private Multiplayer multiplayerManager;
+
+    [Header("UI Panels")]
     [SerializeField] private GameObject roomPanel;
 
-    [Header("Room Panel")]
+    [Header("Room Panel Elements")]
     [SerializeField] private TextMeshProUGUI roomCodeText;
     [SerializeField] private TextMeshProUGUI playerCountText;
     [SerializeField] private TextMeshProUGUI playerListText;
@@ -21,7 +24,6 @@ public class MultiplayerUI : MonoBehaviour
     [Header("Status")]
     [SerializeField] private TextMeshProUGUI statusText;
 
-    private Multiplayer multiplayerManager;
     private bool isInitialized = false;
 
     // Cache variables for change detection
@@ -30,8 +32,6 @@ public class MultiplayerUI : MonoBehaviour
 
     void Start()
     {
-        // Find Multiplayer manager
-        multiplayerManager = FindFirstObjectByType<Multiplayer>();
 
         if (multiplayerManager == null)
         {
@@ -98,6 +98,17 @@ public class MultiplayerUI : MonoBehaviour
     {
         if (!isInitialized || multiplayerManager == null)
             return;
+
+        // If room panel is active, force unlock cursor
+        if (roomPanel != null && roomPanel.activeSelf)
+        {
+            if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                Debug.Log("[MultiplayerUI] Force unlocking cursor in Update!");
+            }
+        }
 
         // Update room info only when in a room and values changed
         if (PhotonNetwork.InRoom)

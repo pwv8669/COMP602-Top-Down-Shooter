@@ -165,6 +165,11 @@ public class VoiceChat : MonoBehaviour
     {
         if (!isVoiceSystemReady) return;
 
+        // If the RoomPanel is active, ignore hotkeys
+        GameObject roomPanel = GameObject.Find("RoomPanel");
+        if (roomPanel != null && roomPanel.activeSelf)
+            return;
+
         UpdatePlayerSpeakers();
 
         // V key: Toggle own microphone

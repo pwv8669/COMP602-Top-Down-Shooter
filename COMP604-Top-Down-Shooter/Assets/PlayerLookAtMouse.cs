@@ -28,6 +28,11 @@ public class PlayerLookAtMouse : MonoBehaviour
         if (mainCamera == null)
             return;
 
+        // Soyun add this part - If room panel is active, do nothing
+        GameObject roomPanel = GameObject.Find("RoomPanel");
+        if (roomPanel != null && roomPanel.activeSelf)
+            return;
+
         // Soyun Edit this part - Don't rotate when mouse is over UI
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;

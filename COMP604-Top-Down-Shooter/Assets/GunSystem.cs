@@ -53,7 +53,12 @@ public class GunSystem : MonoBehaviour
         if (photonView != null && !photonView.IsMine)
             return;
 
-        // Check if mouse is over UI
+        // Soyun add this part - If room panel is active, do nothing
+        GameObject roomPanel = GameObject.Find("RoomPanel");
+        if (roomPanel != null && roomPanel.activeSelf)
+            return;
+
+        // Soyun add this part - Check if mouse is over UI
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             return; // Don't process gun input on UI

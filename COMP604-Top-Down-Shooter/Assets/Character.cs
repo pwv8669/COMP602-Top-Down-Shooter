@@ -22,6 +22,11 @@ public class Character : MonoBehaviour
     {
         if (pv != null && !pv.IsMine) return; //Soyun add this part
 
+        // Soyun add this part - if room panel is active, do nothing
+        GameObject roomPanel = GameObject.Find("RoomPanel");
+        if (roomPanel != null && roomPanel.activeSelf)
+            return;
+
         Vector3 move = new Vector3(moveInput.x, 0, moveInput.y);
 
         if (move.magnitude > 1f) move.Normalize();
