@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun; // Soyun add Photon for multiplayer support
 
 public class GunSystem : MonoBehaviour
 {
@@ -29,14 +30,19 @@ public class GunSystem : MonoBehaviour
     bool fireHeld = false;
     float nextShotTime = 0f;
 
+    private PhotonView pv; // Soyun add for PhotonView reference
+
     void Awake()
     {
         bulletsLeft = magazineSize;
         if (!mainCamera) mainCamera = Camera.main;
+        pv = GetComponent<PhotonView>(); // Soyun add for PhotonView
     }
 
     void Update()
     {
+        if (pv != null && !pv.IsMine) return;// Soyun add to ensure only local player can control their character
+
         // Direct input handling
         if (Keyboard.current.rKey.wasPressedThisFrame)
         {
@@ -61,6 +67,8 @@ public class GunSystem : MonoBehaviour
     // ===== New Input System callbacks =====
     public void OnFire(InputAction.CallbackContext context)
     {
+        if (pv != null && !pv.IsMine) return; // Soyun add to ensure only local player can control their character
+
         if (context.performed)
         {
             fireHeld = true;
@@ -74,6 +82,8 @@ public class GunSystem : MonoBehaviour
 
     public void OnReload(InputAction.CallbackContext context)
     {
+        if (pv != null && !pv.IsMine) return; // Soyun add to ensure only local player can control their character
+
         if (!context.performed) return;
         if (reloading) return;
         if (bulletsLeft >= magazineSize) return; // already full

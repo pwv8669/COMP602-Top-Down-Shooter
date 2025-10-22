@@ -24,10 +24,19 @@ public class EnemyAI : MonoBehaviour
     private void Start()
     {
         m_Agent = GetComponent<NavMeshAgent>();
+
+        FindTarget(); // Soyun add: Find the player target at start
     }
 
     private void Update()
     {
+        //Soyun add: Update sight and attack range checks
+        if (Target == null)
+        {
+            FindTarget();
+            return;
+        }
+
         m_Distance = Vector3.Distance(m_Agent.transform.position, Target.position);
         if (m_Distance < AttackRange)
         {
@@ -38,6 +47,16 @@ public class EnemyAI : MonoBehaviour
         {
             m_Agent.isStopped = false;
             m_Agent.destination = Target.position;
+        }
+    }
+
+    // Soyun add: Method to find the player target
+    private void FindTarget()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            Target = player.transform;
         }
     }
 

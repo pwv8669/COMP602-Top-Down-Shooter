@@ -18,6 +18,12 @@ public class HealthBar : MonoBehaviour
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
+        //Soyun add: Automatically find Health component if not assigned
+        if (health == null)
+        {
+            health = GetComponentInParent<Health>();
+        }
+
         // Initialise visibility based on settings
         if (showOnlyWhenDamaged && !isPlayerHealthBar)
         {

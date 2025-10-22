@@ -13,8 +13,14 @@ public class MenuManager : MonoBehaviour
     private Text volumeText;
     private Dropdown graphicsDropdown;
 
+    //Soyun add this part - multiplayer bridge reference
+    private MenuMultiplayerBridge multiplayerBridge;
+
     void Start()
     {
+        //Soyun add this part - find multiplayer bridge
+        multiplayerBridge = FindFirstObjectByType<MenuMultiplayerBridge>();
+
         // Find all panels automatically
         FindPanels();
         
@@ -93,8 +99,17 @@ public class MenuManager : MonoBehaviour
 
     public void ShowHostMultiplayer()
     {
-        HideAllPanels();
-        if (hostMultiplayerPanel != null) hostMultiplayerPanel.SetActive(true);
+        //HideAllPanels();
+        //Soyun edit this part - Call multiplayer bridge to create room
+        if (multiplayerBridge != null)
+        {
+            multiplayerBridge.OnHostMultiplayerClicked();
+        }
+        else
+        {
+            Debug.LogWarning("[MenuManager] MenuMultiplayerBridge not found!");
+        }
+
         HideTitle();
     }
 
