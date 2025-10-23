@@ -11,11 +11,28 @@ public class PlayerLookAtMouse : MonoBehaviour
     void Start()
     {
         pv = GetComponent<PhotonView>();
+
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+
+            if (mainCamera == null)
+            {
+                Debug.LogError("[PlayerLookAtMouse] Main Camera not found! Make sure your camera has 'MainCamera' tag.");
+            }
+            else
+            {
+                Debug.Log("[PlayerLookAtMouse] Found main camera: " + mainCamera.name);
+            }
+        }
     }
 
     void Update()
     {
         if (pv != null && !pv.IsMine) return; // Soyun add to ensure only local player can control their character
+
+        // Soyun add null check for mainCamera
+        if (mainCamera == null) return;
 
         // Get mouse position on screen.
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();

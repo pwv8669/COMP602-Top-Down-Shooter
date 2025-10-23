@@ -16,6 +16,8 @@ public class Character : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         pv = GetComponent<PhotonView>(); // Soyun add for PhotonView
+        
+
     }
 
     // Update is called once per frame

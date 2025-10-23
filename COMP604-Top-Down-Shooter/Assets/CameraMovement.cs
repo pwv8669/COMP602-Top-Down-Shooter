@@ -7,8 +7,12 @@ public class CameraMovement : MonoBehaviour
     public float smoothSpeed = 0.125f;
     public Vector3 offset = new Vector3(0f, 10f, 0f);
 
+    // Soyun add variables for searching the local player
+    private float searchInterval = 0.5f;
+    private float lastSearchTime;
+
     // Soyun add method to find the local player
-    
+
     void Start()
     {
         if (playerTarget == null)
@@ -21,9 +25,17 @@ public class CameraMovement : MonoBehaviour
 
     void LateUpdate()
     {
+        // Soyun add method to find the local player in multiplayer
         if (playerTarget == null)
+        {
+            if (Time.time - lastSearchTime > searchInterval)
+            {
+                FindMyPlayer();
+                lastSearchTime = Time.time;
+            }
             return;
-            
+        }
+
         Vector3 desiredPosition = playerTarget.position + offset;
         Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
         transform.position = smoothedPosition;

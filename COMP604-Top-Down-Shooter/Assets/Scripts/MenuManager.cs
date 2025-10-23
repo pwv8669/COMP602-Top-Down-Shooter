@@ -87,6 +87,8 @@ public class MenuManager : MonoBehaviour
     // ===== MENU NAVIGATION FUNCTIONS =====
     public void PlayGame()
     {
+        // Soyun add: Single player mode
+        Multiplayer.SetSinglePlayerMode(true);
         SceneManager.LoadScene("SampleScene");
     }
 
@@ -101,6 +103,9 @@ public class MenuManager : MonoBehaviour
     {
         //HideAllPanels();
         //Soyun edit this part - Call multiplayer bridge to create room
+
+        Multiplayer.SetSinglePlayerMode(false);
+
         if (multiplayerBridge != null)
         {
             multiplayerBridge.OnHostMultiplayerClicked();

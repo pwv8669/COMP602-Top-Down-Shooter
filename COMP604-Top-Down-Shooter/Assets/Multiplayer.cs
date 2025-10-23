@@ -22,8 +22,16 @@ public class Multiplayer : MonoBehaviourPunCallbacks
     private int retryCount = 0;
     private MenuMultiplayerBridge menuBridge;
 
+    private static bool isSinglePlayerMode = false;
+
     void Start()
     {
+        if (isSinglePlayerMode)
+        {
+            LogDebug("[Multiplayer] Single player mode - skipping Photon connection");
+            return;
+        }
+
         // Find Menu Bridge (for main menu integration)
         menuBridge = FindFirstObjectByType<MenuMultiplayerBridge>();
 
@@ -32,17 +40,15 @@ public class Multiplayer : MonoBehaviourPunCallbacks
         PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.GameVersion = gameVersion;
 
-#if UNITY_EDITOR
-        if (PhotonNetwork.IsConnected)
-        {
-            LogDebug("[Multiplayer] Editor - Disconnecting previous connection...");
-            PhotonNetwork.Disconnect();
-            StartCoroutine(RetryConnectionCoroutine());
-            return;
-        }
-#endif
+
 
         StartConnection();
+    }
+
+    public static void SetSinglePlayerMode(bool isSinglePlayer)
+    {
+        isSinglePlayerMode = isSinglePlayer;
+        Debug.Log($"[Multiplayer] Single player mode: {isSinglePlayerMode}");
     }
 
     #region Connection Methods
@@ -153,11 +159,7 @@ public class Multiplayer : MonoBehaviourPunCallbacks
             menuBridge.ShowHostPanel();
         }
 
-        // Spawn player only if in game scene
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "SampleScene")
-        {
-            SpawnPlayer();
-        }
+
     }
 
     public override void OnLeftRoom()
@@ -261,34 +263,7 @@ public class Multiplayer : MonoBehaviourPunCallbacks
 
     #endregion
 
-    #region Player Spawning
-
-    /// <summary>
-    /// Spawn player character in the game scene
-    /// Called automatically when joining room in game scene
-    /// </summary>
-    private void SpawnPlayer()
-    {
-        LogDebug("[Multiplayer] Spawning player...");
-
-        // Random spawn position
-        Vector3 spawnPosition = new Vector3(
-            UnityEngine.Random.Range(-5f, 5f),
-            1f,
-            UnityEngine.Random.Range(-5f, 5f)
-        );
-
-        // Instantiate player prefab from Resources folder
-        GameObject player = PhotonNetwork.Instantiate(
-            "Player",  // Must be in Resources folder
-            spawnPosition,
-            Quaternion.identity
-        );
-
-        LogDebug($"[Multiplayer] Player spawned at {spawnPosition}");
-    }
-
-    #endregion
+ 
 
     #region Helper Methods
 

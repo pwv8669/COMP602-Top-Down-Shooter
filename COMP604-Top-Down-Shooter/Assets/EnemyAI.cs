@@ -18,22 +18,32 @@ public class EnemyAI : MonoBehaviour
 
     [Header("States")]
     public float sightRange = 15f;
-    
+
     private bool playerInSightRange, playerInAttackRange;
+
+    // Soyun add: Target update
+    private float targetUpdateInterval = 0.5f;
+    private float lastTargetUpdateTime;
 
     private void Start()
     {
         m_Agent = GetComponent<NavMeshAgent>();
 
-        FindTarget(); // Soyun add: Find the player target at start
+        FindClosestPlayer(); ; // Soyun add: Find the player target at start
     }
 
     private void Update()
     {
         //Soyun add: Update sight and attack range checks
+        if (Time.time - lastTargetUpdateTime > targetUpdateInterval)
+        {
+            FindClosestPlayer();
+            lastTargetUpdateTime = Time.time;
+        }
+
         if (Target == null)
         {
-            FindTarget();
+            FindClosestPlayer();
             return;
         }
 
@@ -50,14 +60,32 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // Soyun add: Method to find the player target
-    private void FindTarget()
+    // Soyun add: Method to find the closest player target
+    private void FindClosestPlayer()
     {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+        if (players.Length == 0)
         {
-            Target = player.transform;
+            Target = null;
+            return;
         }
+
+        Transform closestPlayer = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (GameObject player in players)
+        {
+            float distance = Vector3.Distance(transform.position, player.transform.position);
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestPlayer = player.transform;
+            }
+        }
+
+        Target = closestPlayer;
     }
 
     private void AttackPlayer()
