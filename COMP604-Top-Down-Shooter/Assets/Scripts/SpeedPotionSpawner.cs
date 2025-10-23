@@ -45,8 +45,7 @@ public class SpeedPotionSpawner : MonoBehaviour
         Vector2 randomPos = Random.insideUnitCircle * spawnRadius;
         Vector3 spawnPosition = playerTransform.position + new Vector3(randomPos.x, 0f, randomPos.y); // Y = 0f
 
-        GameObject newPotion = Instantiate(speedPotionPrefab, spawnPosition, Quaternion.Euler(90f, 0f, 0f));
-        newPotion.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+        GameObject newPotion = Instantiate(speedPotionPrefab, spawnPosition, Quaternion.identity);
         
         // Adjust scale and rotation after spawning
         newPotion.transform.localScale = new Vector3(0.08f, 0.08f, 0.08f); // Make smaller
