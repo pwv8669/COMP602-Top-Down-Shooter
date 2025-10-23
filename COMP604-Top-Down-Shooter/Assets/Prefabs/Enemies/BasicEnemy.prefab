@@ -28,7 +28,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3757534991834861253}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.01, y: 0.002, z: 0.01}
   m_ConstrainProportionsScale: 0
@@ -36,7 +36,7 @@ RectTransform:
   - {fileID: 3154007431117810638}
   - {fileID: 6596599965338473732}
   m_Father: {fileID: 7809075879167971911}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 1}
@@ -222,9 +222,10 @@ GameObject:
   - component: {fileID: 4089437465040260818}
   - component: {fileID: 2650001944995428167}
   - component: {fileID: 3835618766376456729}
-  - component: {fileID: 2857975363590312874}
   - component: {fileID: 3440913722874191479}
-  - component: {fileID: 7011753817900052634}
+  - component: {fileID: 870461776371042050}
+  - component: {fileID: 3789848385428443758}
+  - component: {fileID: 4065692717807346817}
   m_Layer: 8
   m_Name: BasicEnemy
   m_TagString: Untagged
@@ -368,22 +369,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   maxHealth: 100
---- !u!114 &2857975363590312874
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4666694918993954263}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ac9346baefe34da3a0bcfecfbbd8651, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  health: {fileID: 3835618766376456729}
-  healthFillImage: {fileID: 5125026800847724522}
-  isPlayerHealthBar: 0
-  showOnlyWhenDamaged: 1
 --- !u!114 &3440913722874191479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -396,7 +381,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a5547f6f72ed4d8caf3434f1fe6851b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &7011753817900052634
+--- !u!114 &870461776371042050
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -405,12 +390,53 @@ MonoBehaviour:
   m_GameObject: {fileID: 4666694918993954263}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 720322e7f6d0941178259f8b4600f347, type: 3}
+  m_Script: {fileID: 11500000, guid: 39cfa9e783d69664f98199f423ad5b4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Target: {fileID: 0}
+  AttackRange: 2
   damage: 10
-  attackRange: 2
-  attackCooldown: 1
+  timeBetweenAttacks: 1
+  sightRange: 15
+--- !u!114 &3789848385428443758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4666694918993954263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39cfa9e783d69664f98199f423ad5b4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Target: {fileID: 0}
+  AttackRange: 2
+  damage: 10
+  timeBetweenAttacks: 1
+  sightRange: 15
+--- !u!195 &4065692717807346817
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4666694918993954263}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1
+  m_BaseOffset: 0.5
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &8850642975491369349
 GameObject:
   m_ObjectHideFlags: 0

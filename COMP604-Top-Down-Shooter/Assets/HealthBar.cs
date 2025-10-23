@@ -107,7 +107,6 @@ public class HealthBar : MonoBehaviour
 
     private void LateUpdate()
     {
-        // Only rotate if this is NOT the player health bar (world space health bars)
         if (!isPlayerHealthBar)
         {
             // Set local rotation to tilt 45 degrees forward
