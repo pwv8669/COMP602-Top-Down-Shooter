@@ -4,34 +4,56 @@ using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
-    [Header("UI Panels")]
-    [SerializeField] private GameObject mainMenuPanel;
-    [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private GameObject hostMultiplayerPanel;
-    [SerializeField] private GameObject joinMultiplayerPanel;
+    private GameObject mainMenuPanel;
+    private GameObject settingsPanel;
+    private GameObject hostMultiplayerPanel;
+    private GameObject joinMultiplayerPanel;
     
-    [Header("Settings UI GameObjects")]
-    [SerializeField] private GameObject volumeSliderObj;
-    [SerializeField] private GameObject volumeTextObj;
-    [SerializeField] private GameObject graphicsDropdownObj;
-
-    // Private component references
     private Slider volumeSlider;
     private Text volumeText;
     private Dropdown graphicsDropdown;
 
     void Start()
     {
-        // Get components from the GameObjects
-        if (volumeSliderObj != null) volumeSlider = volumeSliderObj.GetComponent<Slider>();
-        if (volumeTextObj != null) volumeText = volumeTextObj.GetComponent<Text>();
-        if (graphicsDropdownObj != null) graphicsDropdown = graphicsDropdownObj.GetComponent<Dropdown>();
+        // Find all panels automatically
+        FindPanels();
+        
+        // Find settings UI elements
+        FindSettingsElements();
         
         // Setup events
         SetupEvents();
         
         // Show main menu at start
         ShowMainMenu();
+    }
+
+    void FindPanels()
+    {
+        mainMenuPanel = GameObject.Find("MainMenuPanel");
+        settingsPanel = GameObject.Find("SettingsPanel");
+        hostMultiplayerPanel = GameObject.Find("HostMultiplayerPanel");
+        joinMultiplayerPanel = GameObject.Find("JoinMultiplayerPanel");
+    }
+
+    void FindSettingsElements()
+    {
+        // Find volume slider and text
+        GameObject volumeSliderObj = GameObject.Find("VolumeSlider");
+        if (volumeSliderObj != null)
+        {
+            volumeSlider = volumeSliderObj.GetComponent<Slider>();
+            
+            // Find the text child of the slider
+            Transform volumeTextTransform = volumeSliderObj.transform.Find("VolumeValueText");
+            if (volumeTextTransform != null)
+                volumeText = volumeTextTransform.GetComponent<Text>();
+        }
+        
+        // Find graphics dropdown
+        GameObject graphicsDropdownObj = GameObject.Find("GraphicsDropdown");
+        if (graphicsDropdownObj != null)
+            graphicsDropdown = graphicsDropdownObj.GetComponent<Dropdown>();
     }
 
     void SetupEvents()
