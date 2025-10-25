@@ -1,35 +1,55 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [SerializeField] private GameObject enemyPrefab;
-    
+    [Header("Enemy Settings")]
+    public GameObject enemyPrefab;
+    public int maxEnemiesPerPlayer = 5;
+    public float respawnDelay = 3f;
+
+    private List<GameObject> aliveEnemies = new List<GameObject>();
+    private bool isRespawning = false;
+
     void Start()
     {
-        Debug.Log("EnemySpawner started");
-        SpawnEnemyAtPlayerPosition();
-    }
-    
-    void SpawnEnemyAtPlayerPosition()
-    {
-        if (enemyPrefab != null)
+        for (int i = 0; i < maxEnemiesPerPlayer; i++)
         {
-            GameObject newEnemy = Instantiate(enemyPrefab, transform.position + Vector3.right * 3f, Quaternion.identity);
-            Debug.Log("Enemy spawned at position: " + newEnemy.transform.position);
-        }
-        else
-        {
-            Debug.LogError("Enemy prefab is not assigned!");
+            SpawnEnemy();
         }
     }
-    
-    void Update()
+
+    private void Update()
     {
-        if (Keyboard.current.tKey.wasPressedThisFrame)
+        // Remove destroyed references
+        aliveEnemies.RemoveAll(e => e == null);
+
+        // Top up enemies if under the limit
+        if (aliveEnemies.Count < maxEnemiesPerPlayer && !isRespawning)
         {
-            Debug.Log("T key pressed - spawning enemy");
-            SpawnEnemyAtPlayerPosition();
+            StartCoroutine(RespawnWithDelay());
         }
+    }
+    
+    void SpawnEnemy()
+    {
+        GameObject enemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
+        EnemyAI ai = enemy.GetComponent<EnemyAI>();
+        if(ai != null)
+        {
+            ai.Target = GameObject.FindWithTag("Player").transform;
+        }
+        aliveEnemies.Add(enemy);
+    }
+
+    private System.Collections.IEnumerator RespawnWithDelay()
+    {
+        isRespawning = true;
+        yield return new WaitForSeconds(respawnDelay);
+        if (aliveEnemies.Count < maxEnemiesPerPlayer)
+        {
+            SpawnEnemy();
+        }
+        isRespawning = false;
     }
 }

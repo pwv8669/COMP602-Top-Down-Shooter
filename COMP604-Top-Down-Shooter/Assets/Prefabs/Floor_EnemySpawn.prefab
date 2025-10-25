@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5388255324652688658}
   - component: {fileID: 8885847280546516836}
   - component: {fileID: 4651803699867710615}
+  - component: {fileID: 6108110342062298092}
   m_Layer: 0
   m_Name: Floor_EnemySpawn
   m_TagString: Untagged
@@ -352,3 +353,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!114 &6108110342062298092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001027239863750113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c17c27baab8040d9a83d8117d45deb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyPrefab: {fileID: 4666694918993954263, guid: 7319ea91f22604fa3a889e9ead7a8e72, type: 3}
+  maxEnemiesPerPlayer: 5
+  respawnDelay: 3
