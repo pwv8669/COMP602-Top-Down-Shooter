@@ -63,5 +63,6 @@ public class Health : MonoBehaviour
 
         // Log and disable the object
         Debug.Log(gameObject.name + " died!");
+        Destroy(gameObject);
     }
 }
