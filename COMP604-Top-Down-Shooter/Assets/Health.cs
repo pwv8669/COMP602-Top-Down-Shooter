@@ -52,8 +52,12 @@ public class Health : MonoBehaviour
         // Only invoke event if health actually changed
         if (CurrentHealth != oldHealth)
         {
+            Debug.Log($"Healing: {oldHealth} -> {CurrentHealth} (+{healAmount})");
             OnHealthChanged?.Invoke(CurrentHealth);
-            Debug.Log($"Healed for {healAmount}. Health: {CurrentHealth}/{maxHealth}");
+        }
+        else
+        {
+            Debug.Log($"Healing had no effect (already at max health: {CurrentHealth}/{maxHealth})");
         }
     }
 

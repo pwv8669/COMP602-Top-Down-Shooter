@@ -91,11 +91,13 @@ public class PotionSpawner : MonoBehaviour
             if (isLargePotion)
             {
                 healthPotion.healAmount = 50;
+                healthPotion.isLargePotion = true; // Set the flag
                 currentLargePotions++;
             }
             else
             {
                 healthPotion.healAmount = 10;
+                healthPotion.isLargePotion = false; // Set the flag
                 currentSmallPotions++;
             }
         }

@@ -10,16 +10,15 @@ public class HealthPotion : Potion
     
     private void Setup3DAppearance()
     {
-        // Scale down the potion
         transform.localScale = Vector3.one * 0.5f; 
-        
-        // Rotate to lay flat or at an angle so it's visible from top-down view
-        // For a bottle lying on its side:
         transform.rotation = Quaternion.Euler(90f, 0f, 45f);
     }
     
     public override void ApplyEffect(Health playerHealth)
     {
+        Debug.Log($"Applying health potion effect: +{healAmount} health");
+        Debug.Log($"Health before heal: {playerHealth.CurrentHealth}");
         playerHealth.Heal(healAmount);
+        Debug.Log($"Health after heal: {playerHealth.CurrentHealth}");
     }
 }

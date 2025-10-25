@@ -4,10 +4,10 @@ public abstract class Potion : MonoBehaviour
 {
     [SerializeField] public int healAmount; 
     [SerializeField] protected string potionName;
+    public bool isLargePotion = false; 
     
     public abstract void ApplyEffect(Health playerHealth);
     
-    // This will be called when player touches the potion
     public void Collect(Health playerHealth)
     {
         if (playerHealth != null)
@@ -18,6 +18,13 @@ public abstract class Potion : MonoBehaviour
         else
         {
             Debug.LogError("Potion.Collect: playerHealth is null!");
+        }
+        
+        // Notify spawner before destroying
+        PotionSpawner spawner = FindObjectOfType<PotionSpawner>();
+        if (spawner != null)
+        {
+            spawner.OnPotionCollected(isLargePotion);
         }
         
         Destroy(gameObject);
