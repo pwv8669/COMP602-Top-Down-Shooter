@@ -5,7 +5,7 @@ public class EnemySpawner : MonoBehaviour
 {
     [Header("Enemy Settings")]
     public GameObject enemyPrefab;
-    public int maxEnemiesPerPlayer = 5;
+    public int maxEnemies = 5;
     public float respawnDelay = 3f;
 
     private List<GameObject> aliveEnemies = new List<GameObject>();
@@ -13,7 +13,7 @@ public class EnemySpawner : MonoBehaviour
 
     void Start()
     {
-        for (int i = 0; i < maxEnemiesPerPlayer; i++)
+        for (int i = 0; i < maxEnemies; i++)
         {
             SpawnEnemy();
         }
@@ -25,7 +25,7 @@ public class EnemySpawner : MonoBehaviour
         aliveEnemies.RemoveAll(e => e == null);
 
         // Top up enemies if under the limit
-        if (aliveEnemies.Count < maxEnemiesPerPlayer && !isRespawning)
+        if (aliveEnemies.Count < maxEnemies && !isRespawning)
         {
             StartCoroutine(RespawnWithDelay());
         }
@@ -46,7 +46,7 @@ public class EnemySpawner : MonoBehaviour
     {
         isRespawning = true;
         yield return new WaitForSeconds(respawnDelay);
-        if (aliveEnemies.Count < maxEnemiesPerPlayer)
+        if (aliveEnemies.Count < maxEnemies)
         {
             SpawnEnemy();
         }
