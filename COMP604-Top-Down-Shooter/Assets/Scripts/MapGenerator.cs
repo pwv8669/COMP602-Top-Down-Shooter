@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.AI.Navigation;
 using System.Collections.Generic;
 
 public class MapGenerator : MonoBehaviour
@@ -10,6 +11,10 @@ public class MapGenerator : MonoBehaviour
     public GameObject grassPrefab;
     public GameObject wallPrefab;
     public GameObject minimapPrefab;
+    public GameObject enemySpawnerPrefab;
+
+    // Enemy navmesh to rebake when map regenerates.
+    public NavMeshSurface navMeshSurface;
 
     public void GenerateMap()
     {
@@ -25,6 +30,12 @@ public class MapGenerator : MonoBehaviour
                     PlaceTile(x, y);
                 }
             }
+        }
+
+        // Rebuild the navmesh for the new layout
+        if (navMeshSurface != null)
+        {
+            navMeshSurface.BuildNavMesh();
         }
     }
 
@@ -59,9 +70,20 @@ public class MapGenerator : MonoBehaviour
         bool northWestEmpty = (y + 1 >= gridManager.gridHeight || x - 1 < 0 || gridManager.grid[x - 1, y + 1] == GridManager.CellState.Empty);
         bool southEastEmpty = (y - 1 < 0 || x + 1 >= gridManager.gridWidth || gridManager.grid[x + 1, y - 1] == GridManager.CellState.Empty);
         bool southWestEmpty = (y - 1 < 0 || x - 1 < 0 || gridManager.grid[x - 1, y - 1] == GridManager.CellState.Empty);
+        bool spawnerTile = false;
+
+        // Place enemy spawn where needed.
+        if (gridManager.grid[x, y] == GridManager.CellState.EnemySpawnPoint)
+        {
+            if (enemySpawnerPrefab != null)
+            {
+                Instantiate(enemySpawnerPrefab, tilePosition, Quaternion.identity, this.transform);
+            }
+            spawnerTile = true;
+        }
 
         // Place the floor prefab at the center of the tile
-        if (floorPrefab != null)
+        if (floorPrefab != null && !spawnerTile)
         {
             if (!northEmpty && !eastEmpty && !southEmpty && !westEmpty && !northEastEmpty && !northWestEmpty && !southEastEmpty && !southWestEmpty)
                 Instantiate(grassPrefab, tilePosition, Quaternion.identity, this.transform);

@@ -50,5 +50,6 @@ private void InitializeHealth()
 
         // Log and disable the object
         Debug.Log(gameObject.name + " died!");
+        Destroy(gameObject);
     }
 }
