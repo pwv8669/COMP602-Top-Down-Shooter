@@ -28,6 +28,11 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
+        // Find closest player (multiplayer support)
+        Target = FindClosestPlayer();
+
+        if (Target == null) return;
+
         m_Distance = Vector3.Distance(m_Agent.transform.position, Target.position);
         if (m_Distance < AttackRange)
         {
@@ -39,6 +44,29 @@ public class EnemyAI : MonoBehaviour
             m_Agent.isStopped = false;
             m_Agent.destination = Target.position;
         }
+    }
+
+    private Transform FindClosestPlayer()
+    {
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+        if (players.Length == 0) return null;
+        if (players.Length == 1) return players[0].transform;
+
+        Transform closest = null;
+        float minDistance = Mathf.Infinity;
+
+        foreach (GameObject player in players)
+        {
+            float distance = Vector3.Distance(transform.position, player.transform.position);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closest = player.transform;
+            }
+        }
+
+        return closest;
     }
 
     private void AttackPlayer()

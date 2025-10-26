@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Photon.Pun;
 
 public class EnemySpawner : MonoBehaviour
 {
@@ -10,35 +11,52 @@ public class EnemySpawner : MonoBehaviour
 
     private List<GameObject> aliveEnemies = new List<GameObject>();
     private bool isRespawning = false;
+    private bool isMultiplayer = false;
 
     void Start()
     {
-        for (int i = 0; i < maxEnemies; i++)
+        isMultiplayer = PhotonNetwork.IsConnected;
+
+        // Only host spawns enemies in multiplayer
+        if (!isMultiplayer || PhotonNetwork.IsMasterClient)
         {
-            SpawnEnemy();
+            for (int i = 0; i < maxEnemies; i++)
+            {
+                SpawnEnemy();
+            }
         }
     }
 
     private void Update()
     {
-        // Remove destroyed references
+        // Only host manages enemy spawning in multiplayer
+        if (isMultiplayer && !PhotonNetwork.IsMasterClient)
+            return;
+
         aliveEnemies.RemoveAll(e => e == null);
 
-        // Top up enemies if under the limit
         if (aliveEnemies.Count < maxEnemies && !isRespawning)
         {
             StartCoroutine(RespawnWithDelay());
         }
     }
-    
+
     void SpawnEnemy()
     {
-        GameObject enemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
-        EnemyAI ai = enemy.GetComponent<EnemyAI>();
-        if(ai != null)
+        GameObject enemy;
+
+        if (isMultiplayer)
         {
-            ai.Target = GameObject.FindWithTag("Player").transform;
+            // Multiplayer: Use PhotonNetwork.Instantiate
+            enemy = PhotonNetwork.Instantiate(enemyPrefab.name, transform.position, Quaternion.identity);
         }
+        else
+        {
+            // Singleplayer: Use normal Instantiate
+            enemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
+        }
+
+        // Enemy AI will find closest player automatically
         aliveEnemies.Add(enemy);
     }
 

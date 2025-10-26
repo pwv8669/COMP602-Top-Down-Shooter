@@ -1,5 +1,6 @@
 using UnityEngine;
-using UnityEngine.Events; 
+using UnityEngine.Events;
+using Photon.Pun;
 
 public class Health : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Health : MonoBehaviour
     {
         CurrentHealth = maxHealth;
         Debug.Log($"{gameObject.name} health initialized: {CurrentHealth}/{maxHealth}");
-        
+
         // tiny delay to ensure HealthBar is ready
         Invoke(nameof(InitializeHealth), 0.01f);
     }
@@ -48,7 +49,7 @@ public class Health : MonoBehaviour
     {
         int oldHealth = CurrentHealth;
         CurrentHealth = Mathf.Clamp(CurrentHealth + healAmount, 0, maxHealth);
-        
+
         // Only invoke event if health actually changed
         if (CurrentHealth != oldHealth)
         {
@@ -63,9 +64,35 @@ public class Health : MonoBehaviour
 
     private void Die()
     {
-        OnDied?.Invoke();
+        PhotonView photonView = GetComponent<PhotonView>();
+        if (photonView != null && PhotonNetwork.IsConnected)
+        {
+            // Use RPC to notify all clients
+            photonView.RPC("RPC_Die", RpcTarget.AllBuffered);
+        }
+        else
+        {
+            // Singleplayer
+            LocalDie();
+        }
+    }
 
-        // Log and disable the object
+    [PunRPC]
+    private void RPC_Die()
+    {
+        OnDied?.Invoke();
+        Debug.Log(gameObject.name + " died!");
+
+        // Only the host (MasterClient) actually destroys the object
+        if (PhotonNetwork.IsMasterClient)
+        {
+            PhotonNetwork.Destroy(gameObject);
+        }
+    }
+
+    private void LocalDie()
+    {
+        OnDied?.Invoke();
         Debug.Log(gameObject.name + " died!");
         Destroy(gameObject);
     }

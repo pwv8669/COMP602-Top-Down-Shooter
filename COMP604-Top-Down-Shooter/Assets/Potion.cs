@@ -21,7 +21,7 @@ public abstract class Potion : MonoBehaviour
         }
         
         // Notify spawner before destroying
-        PotionSpawner spawner = FindObjectOfType<PotionSpawner>();
+        PotionSpawner spawner = FindFirstObjectByType<PotionSpawner>();
         if (spawner != null)
         {
             spawner.OnPotionCollected(isLargePotion);
