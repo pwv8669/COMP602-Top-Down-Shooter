@@ -20,7 +20,7 @@ public class MenuManager : MonoBehaviour
     private TMP_Text roomCodeText;
     private TMP_Text membersText;
     private TMP_Text membersList;
-    private InputField roomCodeInput;
+    private TMP_InputField roomCodeInput;
     private Button startGameButton;
 
     private bool isInMultiplayerPanel = false;
@@ -100,7 +100,7 @@ public class MenuManager : MonoBehaviour
         // Find in JoinMultiplayerPanel (even if inactive)
         if (joinMultiplayerPanel != null)
         {
-            roomCodeInput = joinMultiplayerPanel.transform.Find("RoomCodeInput")?.GetComponent<InputField>();
+            roomCodeInput = joinMultiplayerPanel.transform.Find("RoomCodeInput")?.GetComponent<TMP_InputField>();
         }
     }
 
@@ -125,6 +125,15 @@ public class MenuManager : MonoBehaviour
         // Only update UI when in multiplayer panel
         if (isInMultiplayerPanel && multiplayer != null && multiplayer.IsInRoom())
         {
+            // Turn into waiting room if guest joined
+            if (joinMultiplayerPanel != null && joinMultiplayerPanel.activeSelf)
+            {
+                Debug.Log("[MenuManager] Guest joined room! Switching to waiting room...");
+                joinMultiplayerPanel.SetActive(false);
+                if (hostMultiplayerPanel != null)
+                    hostMultiplayerPanel.SetActive(true);
+            }
+
             UpdateMultiplayerUI();
         }
     }

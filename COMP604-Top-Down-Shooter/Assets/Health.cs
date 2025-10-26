@@ -67,8 +67,15 @@ public class Health : MonoBehaviour
         PhotonView photonView = GetComponent<PhotonView>();
         if (photonView != null && PhotonNetwork.IsConnected)
         {
-            // Use RPC to notify all clients
-            photonView.RPC("RPC_Die", RpcTarget.AllBuffered);
+            // Only the owner handles the death
+            if (photonView.IsMine)
+            {
+                // Notify all clients that this player died
+                photonView.RPC("RPC_Die", RpcTarget.AllBuffered);
+
+                // Owner destroys their own object
+                PhotonNetwork.Destroy(gameObject);
+            }
         }
         else
         {
@@ -80,14 +87,10 @@ public class Health : MonoBehaviour
     [PunRPC]
     private void RPC_Die()
     {
+        // This runs on ALL clients (including the one who died)
         OnDied?.Invoke();
         Debug.Log(gameObject.name + " died!");
 
-        // Only the host (MasterClient) actually destroys the object
-        if (PhotonNetwork.IsMasterClient)
-        {
-            PhotonNetwork.Destroy(gameObject);
-        }
     }
 
     private void LocalDie()
