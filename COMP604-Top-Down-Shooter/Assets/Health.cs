@@ -11,7 +11,6 @@ public class Health : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
 
     public int CurrentHealth { get; private set; }
-
     public int MaxHealth => maxHealth;
 
     private void Start()
@@ -23,11 +22,11 @@ public class Health : MonoBehaviour
         Invoke(nameof(InitializeHealth), 0.01f);
     }
 
-private void InitializeHealth()
-{
-    // Trigger the event to update any UI that might be listening
-    OnHealthChanged?.Invoke(CurrentHealth);
-}
+    private void InitializeHealth()
+    {
+        // Trigger the event to update any UI that might be listening
+        OnHealthChanged?.Invoke(CurrentHealth);
+    }
 
     public void TakeDamage(int damageAmount)
     {
@@ -44,11 +43,30 @@ private void InitializeHealth()
         }
     }
 
+    // Healing functionality
+    public void Heal(int healAmount)
+    {
+        int oldHealth = CurrentHealth;
+        CurrentHealth = Mathf.Clamp(CurrentHealth + healAmount, 0, maxHealth);
+        
+        // Only invoke event if health actually changed
+        if (CurrentHealth != oldHealth)
+        {
+            Debug.Log($"Healing: {oldHealth} -> {CurrentHealth} (+{healAmount})");
+            OnHealthChanged?.Invoke(CurrentHealth);
+        }
+        else
+        {
+            Debug.Log($"Healing had no effect (already at max health: {CurrentHealth}/{maxHealth})");
+        }
+    }
+
     private void Die()
     {
         OnDied?.Invoke();
 
         // Log and disable the object
         Debug.Log(gameObject.name + " died!");
+        Destroy(gameObject);
     }
 }

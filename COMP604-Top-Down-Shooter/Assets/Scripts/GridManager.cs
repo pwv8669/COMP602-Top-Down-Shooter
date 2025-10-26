@@ -7,7 +7,8 @@ public class GridManager : MonoBehaviour
     {
         Empty,
         Hallway,
-        Intersection
+        Intersection,
+        EnemySpawnPoint
     }
     public int gridWidth = 20;
     public int gridHeight = 20;
@@ -112,6 +113,25 @@ public class GridManager : MonoBehaviour
                 break;
         }
 
+        Vector2Int? first = null;
+        Vector2Int? last = null;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (grid[x, y] == CellState.Hallway)
+                {
+                    if (first == null)
+                        first = new Vector2Int(x, y);
+                    last = new Vector2Int(x, y);
+                }
+            }
+        }
+
+        if (first.HasValue) grid[first.Value.x, first.Value.y] = CellState.EnemySpawnPoint;
+        if (last.HasValue) grid[last.Value.x, last.Value.y] = CellState.EnemySpawnPoint;
+
         mapGenerator.GenerateMap();
     }
 
@@ -153,6 +173,9 @@ public class GridManager : MonoBehaviour
                         break;
                     case CellState.Intersection:
                         Gizmos.color = Color.cyan;
+                        break;
+                    case CellState.EnemySpawnPoint:
+                        Gizmos.color = Color.red;
                         break;
                 }
 
