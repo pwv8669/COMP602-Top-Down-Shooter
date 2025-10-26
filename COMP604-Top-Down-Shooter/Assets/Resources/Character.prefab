@@ -148,6 +148,7 @@ GameObject:
   - component: {fileID: 6572178757031553562}
   - component: {fileID: -5261142011434170900}
   - component: {fileID: 3514671322520705162}
+  - component: {fileID: -8459183844845411734}
   m_Layer: 0
   m_Name: Character
   m_TagString: Player
@@ -488,6 +489,24 @@ MonoBehaviour:
   m_SynchronizeRotation: 1
   m_SynchronizeScale: 0
   m_UseLocal: 1
+--- !u!114 &-8459183844845411734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2763363673801560537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa033041c0dfb824c9e2f0749ea449a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableVoiceChatOnStart: 1
+  pushToTalkKey: 116
+  isPushToTalkMode: 0
+  microphoneVolume: 1
+  speakerVolume: 1
+  showDebugLogs: 1
 --- !u!1 &4167583012650609767
 GameObject:
   m_ObjectHideFlags: 0
