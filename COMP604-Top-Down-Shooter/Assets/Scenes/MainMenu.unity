@@ -395,13 +395,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99795cccaf1574af192c6a0e5ec8031a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainMenuPanel: {fileID: 2072429432}
-  settingsPanel: {fileID: 1883822071}
-  hostMultiplayerPanel: {fileID: 707926771}
-  joinMultiplayerPanel: {fileID: 424934611}
-  volumeSliderObj: {fileID: 1563265083}
-  volumeTextObj: {fileID: 1627584243}
-  graphicsDropdownObj: {fileID: 2029409917}
 --- !u!114 &20916161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8339,7 +8332,7 @@ GameObject:
   - component: {fileID: 2029409921}
   - component: {fileID: 2029409920}
   - component: {fileID: 2029409919}
-  - component: {fileID: 2029409922}
+  - component: {fileID: 2029409923}
   m_Layer: 5
   m_Name: GraphicsDropdown
   m_TagString: Untagged
@@ -8472,24 +8465,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2029409917}
   m_CullTransparentMesh: 1
---- !u!1 &2044494606
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2044494608}
-  - component: {fileID: 2044494607}
-  m_Layer: 0
-  m_Name: AudioManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2044494607
 --- !u!114 &2029409922
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8503,6 +8478,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioMixer: {fileID: 24100000, guid: 0d18a8b4640a646ea83bf26ca870add0, type: 2}
+--- !u!114 &2029409923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2029409917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7399cd4127af84e06bf1d8f83dcf79ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1 &2044494606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2044494608}
+  - component: {fileID: 2029409922}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!4 &2044494608
 Transform:
   m_ObjectHideFlags: 0
@@ -8518,13 +8522,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_GameObject: {fileID: 2029409917}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7399cd4127af84e06bf1d8f83dcf79ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  graphicsDropdown: {fileID: 0}
 --- !u!1 &2062337212
 GameObject:
   m_ObjectHideFlags: 0
