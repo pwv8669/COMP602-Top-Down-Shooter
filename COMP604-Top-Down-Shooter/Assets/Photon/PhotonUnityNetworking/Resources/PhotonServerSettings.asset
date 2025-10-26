@@ -40,6 +40,9 @@ MonoBehaviour:
   - DestroyRpc
   - HeresWhy
   - RPC_Die
+  - RPC_Heal
+  - RPC_TakeDamage
+  - RPC_SyncHealth
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

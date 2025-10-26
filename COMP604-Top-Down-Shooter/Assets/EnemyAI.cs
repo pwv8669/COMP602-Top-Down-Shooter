@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using Photon.Pun;
 
 public class EnemyAI : MonoBehaviour
 {
@@ -9,25 +10,34 @@ public class EnemyAI : MonoBehaviour
 
     private NavMeshAgent m_Agent;
     private float m_Distance;
+    private PhotonView photonView;
 
-    
     [Header("Attack")]
     public int damage = 10;
     public float timeBetweenAttacks = 1f;
     private bool alreadyAttacked;
 
-    [Header("States")]
-    public float sightRange = 15f;
-    
-    private bool playerInSightRange, playerInAttackRange;
+    // FIXED: Removed unused variables (playerInSightRange, playerInAttackRange, sightRange)
 
     private void Start()
     {
         m_Agent = GetComponent<NavMeshAgent>();
+        photonView = GetComponent<PhotonView>();
+
+        // Subscribe to health death event
+        Health enemyHealth = GetComponent<Health>();
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDied.AddListener(OnEnemyDied);
+        }
     }
 
     private void Update()
     {
+        // In multiplayer, only master client controls AI
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
+            return;
+
         // Find closest player (multiplayer support)
         Target = FindClosestPlayer();
 
@@ -88,5 +98,21 @@ public class EnemyAI : MonoBehaviour
     private void ResetAttack()
     {
         alreadyAttacked = false;
+    }
+
+    private void OnEnemyDied()
+    {
+        // Destroy enemy when it dies
+        if (PhotonNetwork.IsConnected)
+        {
+            if (photonView != null && PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.Destroy(gameObject);
+            }
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }

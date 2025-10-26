@@ -9,21 +9,29 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void Start()
     {
-        if (!PhotonNetwork.IsConnectedAndReady)
+        // Check if in multiplayer mode
+        if (PhotonNetwork.IsConnected)
         {
-            Debug.LogError("[GameManager] Photon Network is not ready!");
-            return;
-        }
+            if (!PhotonNetwork.IsConnectedAndReady)
+            {
+                Debug.LogError("[GameManager] Photon Network is not ready!");
+                return;
+            }
 
-        SpawnPlayer();
+            // Multiplayer: Spawn new players
+            SpawnPlayer();
+        }
+        else
+        {
+            // Singleplayer: Find existing player in scene
+            SetupExistingPlayer();
+        }
     }
 
     void SpawnPlayer()
     {
-        // Determine spawn position based on player number
+        // Only for multiplayer - spawn networked players
         Vector3 spawnPos = PhotonNetwork.IsMasterClient ? player1SpawnPos : player2SpawnPos;
-
-        // Instantiate player
         GameObject player = PhotonNetwork.Instantiate("Character", spawnPos, Quaternion.identity);
 
         if (player == null)
@@ -43,13 +51,27 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             player.name = "Player";
             player.tag = "Player";
-
             SetupLocalPlayer(player);
         }
         else
         {
             SetupRemotePlayer(player);
         }
+    }
+
+    void SetupExistingPlayer()
+    {
+        // Singleplayer: Find player already in the scene
+        GameObject player = GameObject.FindWithTag("Player");
+
+        if (player == null)
+        {
+            Debug.LogError("[GameManager] No player found in scene! Make sure player has 'Player' tag.");
+            return;
+        }
+
+        Debug.Log("[GameManager] Found existing player in scene");
+        SetupLocalPlayer(player);
     }
 
     void SetupLocalPlayer(GameObject player)
@@ -60,22 +82,12 @@ public class GameManager : MonoBehaviourPunCallbacks
         Camera mainCam = Camera.main;
         if (mainCam != null)
         {
-            Debug.Log($"[GameManager] Main camera found at {mainCam.transform.position}");
-
             CameraMovement camMove = mainCam.GetComponent<CameraMovement>();
             if (camMove != null)
             {
                 camMove.playerTarget = player.transform;
                 Debug.Log("[GameManager] Camera target set successfully!");
             }
-            else
-            {
-                Debug.LogError("[GameManager] CameraMovement component NOT FOUND on Main Camera!");
-            }
-        }
-        else
-        {
-            Debug.LogError("[GameManager] Main Camera NOT FOUND!");
         }
 
         // Setup player look at mouse
@@ -83,7 +95,6 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (lookAtMouse != null)
         {
             lookAtMouse.mainCamera = mainCam;
-            Debug.Log("[GameManager] PlayerLookAtMouse configured");
         }
 
         // Setup gun system
@@ -94,9 +105,11 @@ public class GameManager : MonoBehaviourPunCallbacks
             if (gunSystem != null)
             {
                 gunSystem.mainCamera = mainCam;
-                Debug.Log("[GameManager] GunSystem configured");
             }
         }
+
+        // Connect HealthBar to this player
+        ConnectHealthBar(player);
 
         Debug.Log("[GameManager] Local player setup complete");
     }
@@ -119,5 +132,39 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
 
         Debug.Log("[GameManager] Remote player setup complete");
+    }
+
+    void ConnectHealthBar(GameObject player)
+    {
+        // PlayerHealthBar is a child Canvas of the player prefab
+        GameObject healthBarObj = GameObject.Find("PlayerHealthBar");
+        if (healthBarObj == null)
+        {
+            Debug.LogWarning("[GameManager] PlayerHealthBar not found in scene");
+            return;
+        }
+
+        HealthBar healthBar = healthBarObj.GetComponent<HealthBar>();
+        Health playerHealth = player.GetComponent<Health>();
+
+        if (healthBar == null || playerHealth == null)
+        {
+            Debug.LogWarning("[GameManager] HealthBar or Health component missing");
+            return;
+        }
+
+        // Use reflection to set the private health field
+        System.Reflection.FieldInfo healthField = typeof(HealthBar).GetField("health",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        if (healthField != null)
+        {
+            healthField.SetValue(healthBar, playerHealth);
+            Debug.Log("[GameManager] HealthBar connected to player!");
+        }
+        else
+        {
+            Debug.LogError("[GameManager] Could not find 'health' field in HealthBar.");
+        }
     }
 }

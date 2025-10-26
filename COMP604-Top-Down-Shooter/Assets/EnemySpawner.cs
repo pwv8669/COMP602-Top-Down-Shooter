@@ -8,6 +8,7 @@ public class EnemySpawner : MonoBehaviour
     public GameObject enemyPrefab;
     public int maxEnemies = 5;
     public float respawnDelay = 3f;
+    public string enemyPrefabName = "BasicEnemy";
 
     private List<GameObject> aliveEnemies = new List<GameObject>();
     private bool isRespawning = false;
@@ -48,7 +49,7 @@ public class EnemySpawner : MonoBehaviour
         if (isMultiplayer)
         {
             // Multiplayer: Use PhotonNetwork.Instantiate
-            enemy = PhotonNetwork.Instantiate(enemyPrefab.name, transform.position, Quaternion.identity);
+            enemy = PhotonNetwork.Instantiate(enemyPrefabName, transform.position, Quaternion.identity);
         }
         else
         {

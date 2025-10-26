@@ -415,7 +415,6 @@ MonoBehaviour:
   AttackRange: 2
   damage: 10
   timeBetweenAttacks: 1
-  sightRange: 150
 --- !u!195 &3169282062805687218
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -456,7 +455,8 @@ MonoBehaviour:
   Synchronization: 3
   OwnershipTransfer: 0
   observableSearch: 2
-  ObservedComponents: []
+  ObservedComponents:
+  - {fileID: -6408227588955832197}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0

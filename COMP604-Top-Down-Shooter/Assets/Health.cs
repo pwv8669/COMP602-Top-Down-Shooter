@@ -14,6 +14,13 @@ public class Health : MonoBehaviour
     public int CurrentHealth { get; private set; }
     public int MaxHealth => maxHealth;
 
+    private PhotonView photonView;
+
+    private void Awake()
+    {
+        photonView = GetComponent<PhotonView>();
+    }
+
     private void Start()
     {
         CurrentHealth = maxHealth;
@@ -31,11 +38,23 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(int damageAmount)
     {
+        // In multiplayer, only owner can modify health
+        if (photonView != null && PhotonNetwork.IsConnected && !photonView.IsMine)
+        {
+            return;
+        }
+
         // Clamp the health so it never goes below 0 or above maxHealth
         CurrentHealth = Mathf.Clamp(CurrentHealth - damageAmount, 0, maxHealth);
 
         // Let's player know the health has changed 
         OnHealthChanged?.Invoke(CurrentHealth);
+
+        // Sync health to other clients in multiplayer
+        if (photonView != null && PhotonNetwork.IsConnected)
+        {
+            photonView.RPC("RPC_SyncHealth", RpcTarget.OthersBuffered, CurrentHealth);
+        }
 
         // Check if player is out of health
         if (CurrentHealth <= 0)
@@ -47,6 +66,12 @@ public class Health : MonoBehaviour
     // Healing functionality
     public void Heal(int healAmount)
     {
+        // In multiplayer, only owner can modify health
+        if (photonView != null && PhotonNetwork.IsConnected && !photonView.IsMine)
+        {
+            return;
+        }
+
         int oldHealth = CurrentHealth;
         CurrentHealth = Mathf.Clamp(CurrentHealth + healAmount, 0, maxHealth);
 
@@ -55,6 +80,12 @@ public class Health : MonoBehaviour
         {
             Debug.Log($"Healing: {oldHealth} -> {CurrentHealth} (+{healAmount})");
             OnHealthChanged?.Invoke(CurrentHealth);
+
+            // Sync health to other clients in multiplayer
+            if (photonView != null && PhotonNetwork.IsConnected)
+            {
+                photonView.RPC("RPC_SyncHealth", RpcTarget.OthersBuffered, CurrentHealth);
+            }
         }
         else
         {
@@ -62,9 +93,21 @@ public class Health : MonoBehaviour
         }
     }
 
+    [PunRPC]
+    private void RPC_SyncHealth(int newHealth)
+    {
+        CurrentHealth = newHealth;
+        OnHealthChanged?.Invoke(CurrentHealth);
+
+        if (CurrentHealth <= 0)
+        {
+            OnDied?.Invoke();
+        }
+    }
+
     private void Die()
     {
-        PhotonView photonView = GetComponent<PhotonView>();
+        // FIXED: Use existing photonView field instead of GetComponent again
         if (photonView != null && PhotonNetwork.IsConnected)
         {
             // Only the owner handles the death
