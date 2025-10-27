@@ -8,7 +8,8 @@ public class GridManager : MonoBehaviour
         Empty,
         Hallway,
         Intersection,
-        EnemySpawnPoint
+        EnemySpawnPoint,
+        Safezone  // New: Blue safe zone in center where enemies cannot enter
     }
     public int gridWidth = 20;
     public int gridHeight = 20;
@@ -132,6 +133,11 @@ public class GridManager : MonoBehaviour
         if (first.HasValue) grid[first.Value.x, first.Value.y] = CellState.EnemySpawnPoint;
         if (last.HasValue) grid[last.Value.x, last.Value.y] = CellState.EnemySpawnPoint;
 
+        // New: Create safe zone at center of grid
+        int midX = gridWidth / 2;
+        int midY = gridHeight / 2;
+        grid[midX, midY] = CellState.Safezone;
+
         mapGenerator.GenerateMap();
     }
 
@@ -176,6 +182,9 @@ public class GridManager : MonoBehaviour
                         break;
                     case CellState.EnemySpawnPoint:
                         Gizmos.color = Color.red;
+                        break;
+                    case CellState.Safezone:
+                        Gizmos.color = Color.blue;
                         break;
                 }
 
