@@ -98,6 +98,28 @@ public class GameManager : MonoBehaviourPunCallbacks
             }
         }
 
+        // Setup player health bar connection
+        GameObject healthBarObj = GameObject.Find("PlayerHealthBar");
+        if (healthBarObj != null)
+        {
+            Health playerHealth = player.GetComponent<Health>();
+            HealthBar healthBar = healthBarObj.GetComponent<HealthBar>();
+
+            if (playerHealth != null && healthBar != null)
+            {
+                healthBar.SetHealth(playerHealth);
+                Debug.Log("[GameManager] PlayerHealthBar connected successfully!");
+            }
+            else
+            {
+                Debug.LogError("[GameManager] Health or HealthBar component not found!");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] PlayerHealthBar not found in scene.");
+        }
+
         Debug.Log("[GameManager] Local player setup complete");
     }
 

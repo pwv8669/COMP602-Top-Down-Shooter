@@ -9,6 +9,7 @@ public class HealthBar : MonoBehaviour
     [SerializeField] private bool showOnlyWhenDamaged = false;
 
     private CanvasGroup canvasGroup;
+    private bool isInitialized = false;
 
     private void Start()
     {
@@ -30,15 +31,39 @@ public class HealthBar : MonoBehaviour
             Debug.Log("Player health bar visible at start");
         }
 
+        // Try to initialize if health is already assigned (for enemies)
         if (health != null)
         {
-            health.OnHealthChanged.AddListener(UpdateHealthBar);
-            health.OnDied.AddListener(OnEntityDied);
+            InitializeHealthBar();
         }
-        else
+        // For player health bar, health will be assigned later by GameManager via SetHealth()
+    }
+
+    // Public method to set health reference and initialize
+    public void SetHealth(Health newHealth)
+    {
+        if (health != null)
         {
-            Debug.LogError("Health component not assigned to HealthBar on " + gameObject.name);
+            // Remove old listeners
+            health.OnHealthChanged.RemoveListener(UpdateHealthBar);
+            health.OnDied.RemoveListener(OnEntityDied);
         }
+
+        health = newHealth;
+        InitializeHealthBar();
+    }
+
+    private void InitializeHealthBar()
+    {
+        if (health == null || isInitialized) return;
+
+        health.OnHealthChanged.AddListener(UpdateHealthBar);
+        health.OnDied.AddListener(OnEntityDied);
+        isInitialized = true;
+
+        // Update to current health
+        UpdateHealthBar(health.CurrentHealth);
+        Debug.Log($"HealthBar initialized for {health.gameObject.name}");
     }
 
     private void InitializeHealthBarVisibility()

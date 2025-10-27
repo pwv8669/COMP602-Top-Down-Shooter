@@ -12,6 +12,8 @@ public class Character : MonoBehaviour
     void Start()
     {
         characterController = GetComponent<CharacterController>();
+
+        photonView = GetComponent<PhotonView>();
     }
 
     // Update is called once per frame
