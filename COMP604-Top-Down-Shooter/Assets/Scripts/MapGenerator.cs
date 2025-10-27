@@ -12,6 +12,7 @@ public class MapGenerator : MonoBehaviour
     public GameObject wallPrefab;
     public GameObject minimapPrefab;
     public GameObject enemySpawnerPrefab;
+    public GameObject safezonePrefab;
 
     // Enemy navmesh to rebake when map regenerates.
     public NavMeshSurface navMeshSurface;
@@ -71,6 +72,7 @@ public class MapGenerator : MonoBehaviour
         bool southEastEmpty = (y - 1 < 0 || x + 1 >= gridManager.gridWidth || gridManager.grid[x + 1, y - 1] == GridManager.CellState.Empty);
         bool southWestEmpty = (y - 1 < 0 || x - 1 < 0 || gridManager.grid[x - 1, y - 1] == GridManager.CellState.Empty);
         bool spawnerTile = false;
+        bool safezoneTile = false;
 
         // Place enemy spawn where needed.
         if (gridManager.grid[x, y] == GridManager.CellState.EnemySpawnPoint)
@@ -82,8 +84,18 @@ public class MapGenerator : MonoBehaviour
             spawnerTile = true;
         }
 
+        // Place safezone where needed.
+        if (gridManager.grid[x, y] == GridManager.CellState.Safezone)
+        {
+            if (safezonePrefab != null)
+            {
+                Instantiate(safezonePrefab, tilePosition, Quaternion.identity, this.transform);
+            }
+            safezoneTile = true;
+        }
+
         // Place the floor prefab at the center of the tile
-        if (floorPrefab != null && !spawnerTile)
+        if (floorPrefab != null && !spawnerTile && !safezoneTile)
         {
             if (!northEmpty && !eastEmpty && !southEmpty && !westEmpty && !northEastEmpty && !northWestEmpty && !southEastEmpty && !southWestEmpty)
                 Instantiate(grassPrefab, tilePosition, Quaternion.identity, this.transform);
