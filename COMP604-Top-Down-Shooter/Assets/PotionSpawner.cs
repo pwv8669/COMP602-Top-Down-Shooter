@@ -29,6 +29,12 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
 
     private void Start()
     {
+        Debug.Log($"[PotionSpawner] === INSPECTOR SETTINGS ===");
+        Debug.Log($"[PotionSpawner] mapCenter = {mapCenter}");
+        Debug.Log($"[PotionSpawner] spawnRadius = {spawnRadius}");
+        Debug.Log($"[PotionSpawner] IsMasterClient = {PhotonNetwork.IsMasterClient}");
+        Debug.Log($"[PotionSpawner] IsConnected = {PhotonNetwork.IsConnected}");
+
         // MULTIPLAYER: Only host spawns potions
         if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
         {
@@ -141,7 +147,7 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
         }
 
         // Parent to this spawner for organization
-        potion.transform.SetParent(transform, true);
+        potion.transform.SetParent(transform);
 
         Debug.Log($"[PotionSpawner] Successfully spawned {(isLargePotion ? "Large" : "Small")} health potion at {spawnPosition}");
     }

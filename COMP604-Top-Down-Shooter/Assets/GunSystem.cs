@@ -161,17 +161,8 @@ public class GunSystem : MonoBehaviourPunCallbacks
                 }
             }
 
-            // MULTIPLAYER: Broadcast shoot effects (sound, animation)
-            // FIXED: Use parent PhotonView instead of this.photonView
-            if (PhotonNetwork.IsConnected && parentPhotonView != null)
-            {
-                parentPhotonView.RPC(nameof(RPC_PlayShootEffects), RpcTarget.All);
-            }
-            else
-            {
-                // SINGLEPLAYER: Play directly
-                PlayShootEffects();
-            }
+            // Play shoot effects locally (each player hears their own gun)
+            PlayShootEffects();
 
             // Ammo management
             bulletsLeft--;
@@ -188,13 +179,6 @@ public class GunSystem : MonoBehaviourPunCallbacks
         {
             readyToShoot = true;
         }
-    }
-
-    // ===== RPC: Play shoot effects on all clients =====
-    [PunRPC]
-    void RPC_PlayShootEffects()
-    {
-        PlayShootEffects();
     }
 
     void PlayShootEffects()
