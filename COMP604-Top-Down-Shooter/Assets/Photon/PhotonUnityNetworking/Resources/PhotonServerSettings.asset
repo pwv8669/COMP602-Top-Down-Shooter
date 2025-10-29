@@ -40,6 +40,14 @@ MonoBehaviour:
   - DestroyRpc
   - HeresWhy
   - RPC_Die
+  - RPC_Heal
+  - RPC_PlayShootEffects
+  - RPC_RequestDamage
+  - RPC_RequestHeal
+  - RPC_SetPotionValues
+  - RPC_TakeDamage
+  - RPC_ApplyDamage
+  - RPC_ApplyHeal
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

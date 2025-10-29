@@ -88,7 +88,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
             if (playerHealth != null)
             {
                 // MULTIPLAYER: Mark this as enemy attack so Health.cs can route correctly
-                playerHealth.TakeDamage(damage, attackerIsEnemy: true);
+                playerHealth.TakeDamage(damage);
                 Debug.Log($"[EnemyAI] Enemy attacked {Target.name} for {damage} damage");
             }
 

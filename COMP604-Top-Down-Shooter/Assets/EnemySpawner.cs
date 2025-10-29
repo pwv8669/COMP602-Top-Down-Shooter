@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Photon.Pun;
 
-public class EnemySpawner : MonoBehaviour
+public class EnemySpawner : MonoBehaviourPunCallbacks
 {
     [Header("Enemy Settings")]
     public GameObject enemyPrefab;
@@ -11,30 +11,33 @@ public class EnemySpawner : MonoBehaviour
 
     private List<GameObject> aliveEnemies = new List<GameObject>();
     private bool isRespawning = false;
-    private bool isMultiplayer = false;
 
     void Start()
     {
-        isMultiplayer = PhotonNetwork.IsConnected;
-
-        // Only host spawns enemies in multiplayer
-        if (!isMultiplayer || PhotonNetwork.IsMasterClient)
+        // MULTIPLAYER: Only host spawns enemies
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
         {
-            for (int i = 0; i < maxEnemies; i++)
-            {
-                SpawnEnemy();
-            }
+            Debug.Log("[EnemySpawner] Client: Not spawning enemies (host handles this)");
+            return;
+        }
+
+        // Spawn initial enemies
+        for (int i = 0; i < maxEnemies; i++)
+        {
+            SpawnEnemy();
         }
     }
 
     private void Update()
     {
-        // Only host manages enemy spawning in multiplayer
-        if (isMultiplayer && !PhotonNetwork.IsMasterClient)
+        // MULTIPLAYER: Only host manages enemy spawning
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
             return;
 
+        // Clean up null references (destroyed enemies)
         aliveEnemies.RemoveAll(e => e == null);
 
+        // Respawn if needed
         if (aliveEnemies.Count < maxEnemies && !isRespawning)
         {
             StartCoroutine(RespawnWithDelay());
@@ -45,16 +48,21 @@ public class EnemySpawner : MonoBehaviour
     {
         GameObject enemy;
 
-        if (isMultiplayer)
+        if (PhotonNetwork.IsConnected)
         {
-            // Multiplayer: Use PhotonNetwork.Instantiate
+            // MULTIPLAYER: Use PhotonNetwork.Instantiate
             enemy = PhotonNetwork.Instantiate(enemyPrefab.name, transform.position, Quaternion.identity);
+            Debug.Log($"[MULTIPLAYER] Spawned enemy via PhotonNetwork at {transform.position}");
         }
         else
         {
-            // Singleplayer: Use normal Instantiate
+            // SINGLEPLAYER: Use normal Instantiate
             enemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
         }
+
+        enemy.layer = LayerMask.NameToLayer("Enemy");
+
+        Debug.Log($"[EnemySpawner] Enemy spawned - Layer: {enemy.layer} ({LayerMask.LayerToName(enemy.layer)})");
 
         // Enemy AI will find closest player automatically
         aliveEnemies.Add(enemy);

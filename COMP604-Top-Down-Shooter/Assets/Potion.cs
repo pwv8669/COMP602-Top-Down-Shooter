@@ -23,7 +23,7 @@ public abstract class Potion : MonoBehaviourPunCallbacks
 
         // MULTIPLAYER: Notify spawner before destroying (only if we're the collector)
         PhotonView pv = GetComponent<PhotonView>();
-        if (pv == null || PhotonNetwork.IsConnected == false || PhotonNetwork.IsMasterClient)
+        if (!PhotonNetwork.IsConnected || PhotonNetwork.IsMasterClient)
         {
             // Singleplayer OR we are the host in multiplayer
             PotionSpawner spawner = FindFirstObjectByType<PotionSpawner>();

@@ -2,6 +2,11 @@ using UnityEngine;
 using System.Collections;
 using Photon.Pun;
 
+/// <summary>
+/// Spawns health potions around a random position
+/// Host-only spawning with proper multiplayer synchronization
+/// FIXED: Potions now spawn at correct Y height
+/// </summary>
 public class PotionSpawner : MonoBehaviourPunCallbacks
 {
     [Header("Potion Prefabs")]
@@ -13,10 +18,14 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
     [SerializeField] private int maxLargePotions = 3;
     [SerializeField] private float spawnRadius = 15f;
     [SerializeField] private float spawnInterval = 5f;
+    [SerializeField] private Vector3 mapCenter = new Vector3(100f, 1.1f, 100f); // Default spawn center
 
     private int currentSmallPotions = 0;
     private int currentLargePotions = 0;
-    private Transform playerTransform;
+
+    // Prefab names for PhotonNetwork.Instantiate (must match Resources folder)
+    private const string SMALL_POTION_NAME = "SmallHealthPotion";
+    private const string LARGE_POTION_NAME = "LargeHealthPotion";
 
     private void Start()
     {
@@ -27,21 +36,10 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
             return;
         }
 
-        // Find the player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            playerTransform = player.transform;
-        }
-        else
-        {
-            Debug.LogError("PotionSpawner: No player found! Make sure your player has the 'Player' tag.");
-        }
-
         // Spawn some initial potions
         for (int i = 0; i < 3; i++)
         {
-            SpawnPotion(smallHealthPotionPrefab, false);
+            SpawnPotion(SMALL_POTION_NAME, false);
         }
 
         // Start continuous spawning
@@ -64,48 +62,49 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
             if (randomValue < 0.7f && currentSmallPotions < maxSmallPotions)
             {
                 // 70% chance for small potion
-                SpawnPotion(smallHealthPotionPrefab, false);
+                SpawnPotion(SMALL_POTION_NAME, false);
             }
             else if (randomValue < 0.9f && currentLargePotions < maxLargePotions)
             {
                 // 20% chance for large potion
-                SpawnPotion(largeHealthPotionPrefab, true);
+                SpawnPotion(LARGE_POTION_NAME, true);
             }
             // 10% chance to spawn nothing
         }
     }
 
-    private void SpawnPotion(GameObject potionPrefab, bool isLargePotion)
+    private void SpawnPotion(string potionPrefabName, bool isLargePotion)
     {
-        if (potionPrefab == null)
+        // Validate prefab name
+        if (string.IsNullOrEmpty(potionPrefabName))
         {
-            Debug.LogWarning("Potion prefab is null! Make sure to assign prefabs in the inspector.");
+            Debug.LogError("[PotionSpawner] Potion prefab name is null or empty!");
             return;
         }
 
-        if (playerTransform == null)
-        {
-            Debug.LogWarning("PotionSpawner: No player transform found!");
-            return;
-        }
-
-        // Get random position around player
+        // Get random position around map center
         Vector3 spawnPosition = GetRandomSpawnPosition();
 
-        Debug.Log($"Spawning potion at position: {spawnPosition}");
+        Debug.Log($"[PotionSpawner] Spawning {potionPrefabName} at position: {spawnPosition}");
 
         GameObject potion;
 
         if (PhotonNetwork.IsConnected)
         {
-            // MULTIPLAYER: Use PhotonNetwork.Instantiate
-            potion = PhotonNetwork.Instantiate(potionPrefab.name, spawnPosition, Quaternion.identity);
-            Debug.Log($"[MULTIPLAYER] Spawned potion via PhotonNetwork: {potionPrefab.name}");
+            // MULTIPLAYER: Use PhotonNetwork.Instantiate with EXACT prefab name from Resources
+            potion = PhotonNetwork.Instantiate(potionPrefabName, spawnPosition, Quaternion.identity);
+            Debug.Log($"[MULTIPLAYER] Spawned potion via PhotonNetwork: {potionPrefabName}");
         }
         else
         {
             // SINGLEPLAYER: Use normal Instantiate
-            potion = Instantiate(potionPrefab, spawnPosition, Quaternion.identity);
+            GameObject prefab = isLargePotion ? largeHealthPotionPrefab : smallHealthPotionPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError($"[PotionSpawner] Prefab is null for {potionPrefabName}!");
+                return;
+            }
+            potion = Instantiate(prefab, spawnPosition, Quaternion.identity);
         }
 
         // Set up the potion values
@@ -115,13 +114,13 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
             if (isLargePotion)
             {
                 healthPotion.healAmount = 50;
-                healthPotion.isLargePotion = true; // Set the flag
+                healthPotion.isLargePotion = true;
                 currentLargePotions++;
             }
             else
             {
                 healthPotion.healAmount = 10;
-                healthPotion.isLargePotion = false; // Set the flag
+                healthPotion.isLargePotion = false;
                 currentSmallPotions++;
             }
 
@@ -136,28 +135,28 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
                 }
             }
         }
+        else
+        {
+            Debug.LogError($"[PotionSpawner] HealthPotion component not found on {potionPrefabName}!");
+        }
 
         // Parent to this spawner for organization
-        potion.transform.SetParent(transform);
+        potion.transform.SetParent(transform, true);
 
-        Debug.Log($"Successfully spawned {(isLargePotion ? "Large" : "Small")} health potion at {spawnPosition}");
+        Debug.Log($"[PotionSpawner] Successfully spawned {(isLargePotion ? "Large" : "Small")} health potion at {spawnPosition}");
     }
 
     private Vector3 GetRandomSpawnPosition()
     {
-        if (playerTransform == null)
-        {
-            Debug.LogError("Player transform not found!");
-            return Vector3.zero;
-        }
-
-        // Get random point around player within spawn radius (X and Z only)
+        // Get random point around map center within spawn radius (X and Z only)
         Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
 
-        // Use player's Y position so potions spawn at the same height as player
-        Vector3 spawnPosition = playerTransform.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
-
-        Debug.Log($"Player Y: {playerTransform.position.y}, Spawn Y: {spawnPosition.y}");
+        // FIXED: Keep the Y position from mapCenter, don't override it with 0
+        Vector3 spawnPosition = new Vector3(
+            mapCenter.x + randomCircle.x,
+            mapCenter.y,  // Use mapCenter's Y position
+            mapCenter.z + randomCircle.y
+        );
 
         return spawnPosition;
     }
@@ -177,5 +176,7 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
         {
             currentSmallPotions--;
         }
+
+        Debug.Log($"[PotionSpawner] Potion collected. Small: {currentSmallPotions}/{maxSmallPotions}, Large: {currentLargePotions}/{maxLargePotions}");
     }
 }

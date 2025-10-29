@@ -2,6 +2,10 @@ using UnityEngine;
 using UnityEngine.Events;
 using Photon.Pun;
 
+/// <summary>
+/// Simplified Health system for multiplayer
+/// Rule: All damage/heal is processed by MasterClient for authority
+/// </summary>
 public class Health : MonoBehaviourPunCallbacks, IPunObservable
 {
     // Public events for UI and other systems
@@ -31,131 +35,83 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
         OnHealthChanged?.Invoke(CurrentHealth);
     }
 
-    // ===== MULTIPLAYER: Call this to deal damage =====
-    // attackerIsEnemy: Set to true when enemy attacks player
-    public void TakeDamage(int damageAmount, bool attackerIsEnemy = false)
+    // ===== PUBLIC API: Damage =====
+    public void TakeDamage(int damageAmount)
     {
         if (isDead) return;
 
-        PhotonView pv = GetComponent<PhotonView>();
-
-        if (pv != null && PhotonNetwork.IsConnected)
+        // MULTIPLAYER: Route all damage through MasterClient
+        if (PhotonNetwork.IsConnected)
         {
-            // MULTIPLAYER MODE
-            if (CompareTag("Player"))
+            if (PhotonNetwork.IsMasterClient)
             {
-                // PLAYER: Check who is dealing damage
-                if (attackerIsEnemy)
-                {
-                    // ENEMY ATTACK: Host sends damage to player owner
-                    if (PhotonNetwork.IsMasterClient)
-                    {
-                        // Host tells the player owner to take damage
-                        photonView.RPC(nameof(RPC_TakeDamage), pv.Owner, damageAmount);
-                    }
-                }
-                else
-                {
-                    // PLAYER DAMAGE (from gun, etc): Only owner can modify their own health
-                    if (pv.IsMine)
-                    {
-                        RPC_TakeDamage(damageAmount);
-                        photonView.RPC(nameof(RPC_TakeDamage), RpcTarget.Others, damageAmount);
-                    }
-                }
+                // Host: Apply damage directly
+                ApplyDamage(damageAmount);
             }
             else
             {
-                // ENEMY: Anyone can damage, but send to MasterClient for authority
-                // Client shoots enemy ¡æ tells host ¡æ host applies damage ¡æ syncs to all
-                if (PhotonNetwork.IsMasterClient)
-                {
-                    // Host directly applies damage
-                    RPC_TakeDamage(damageAmount);
-                    photonView.RPC(nameof(RPC_TakeDamage), RpcTarget.Others, damageAmount);
-                }
-                else
-                {
-                    // Client requests damage from host
-                    photonView.RPC(nameof(RPC_RequestDamage), RpcTarget.MasterClient, damageAmount);
-                }
+                // Client: Request damage from host
+                photonView.RPC(nameof(RPC_RequestDamage), RpcTarget.MasterClient, damageAmount);
             }
         }
         else
         {
-            // SINGLEPLAYER MODE: Direct call
-            RPC_TakeDamage(damageAmount);
+            // SINGLEPLAYER: Apply directly
+            ApplyDamage(damageAmount);
         }
     }
 
-    // ===== RPC: Client requests host to apply damage to enemy =====
-    [PunRPC]
-    private void RPC_RequestDamage(int damageAmount)
-    {
-        // Only host processes this request
-        if (PhotonNetwork.IsMasterClient && !isDead)
-        {
-            RPC_TakeDamage(damageAmount);
-            photonView.RPC(nameof(RPC_TakeDamage), RpcTarget.Others, damageAmount);
-        }
-    }
-
-    // ===== MULTIPLAYER: Call this to heal =====
+    // ===== PUBLIC API: Heal =====
     public void Heal(int healAmount)
     {
         if (isDead) return;
 
-        PhotonView pv = GetComponent<PhotonView>();
-
-        if (pv != null && PhotonNetwork.IsConnected)
+        // MULTIPLAYER: Route all healing through MasterClient
+        if (PhotonNetwork.IsConnected)
         {
-            // MULTIPLAYER MODE
-            if (CompareTag("Player"))
+            if (PhotonNetwork.IsMasterClient)
             {
-                // PLAYER: Only owner can heal themselves
-                if (pv.IsMine)
-                {
-                    RPC_Heal(healAmount);
-                    photonView.RPC(nameof(RPC_Heal), RpcTarget.Others, healAmount);
-                }
+                // Host: Apply heal directly
+                ApplyHeal(healAmount);
             }
             else
             {
-                // ENEMY: Host manages enemy healing (rare case)
-                if (PhotonNetwork.IsMasterClient)
-                {
-                    RPC_Heal(healAmount);
-                    photonView.RPC(nameof(RPC_Heal), RpcTarget.Others, healAmount);
-                }
-                else
-                {
-                    // Client requests heal from host
-                    photonView.RPC(nameof(RPC_RequestHeal), RpcTarget.MasterClient, healAmount);
-                }
+                // Client: Request heal from host
+                photonView.RPC(nameof(RPC_RequestHeal), RpcTarget.MasterClient, healAmount);
             }
         }
         else
         {
-            // SINGLEPLAYER MODE: Direct call
-            RPC_Heal(healAmount);
+            // SINGLEPLAYER: Apply directly
+            ApplyHeal(healAmount);
         }
     }
 
-    // ===== RPC: Client requests host to heal enemy =====
+    // ===== RPC: Damage Request (Client -> Host) =====
+    [PunRPC]
+    private void RPC_RequestDamage(int damageAmount)
+    {
+        // Only host processes damage requests
+        if (PhotonNetwork.IsMasterClient && !isDead)
+        {
+            ApplyDamage(damageAmount);
+        }
+    }
+
+    // ===== RPC: Heal Request (Client -> Host) =====
     [PunRPC]
     private void RPC_RequestHeal(int healAmount)
     {
-        // Only host processes this request
+        // Only host processes heal requests
         if (PhotonNetwork.IsMasterClient && !isDead)
         {
-            RPC_Heal(healAmount);
-            photonView.RPC(nameof(RPC_Heal), RpcTarget.Others, healAmount);
+            ApplyHeal(healAmount);
         }
     }
 
-    // ===== RPC: Actual damage logic =====
+    // ===== RPC: Apply Damage (Host -> All) =====
     [PunRPC]
-    private void RPC_TakeDamage(int damageAmount)
+    private void RPC_ApplyDamage(int damageAmount)
     {
         if (isDead) return;
 
@@ -174,9 +130,9 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
         }
     }
 
-    // ===== RPC: Actual heal logic =====
+    // ===== RPC: Apply Heal (Host -> All) =====
     [PunRPC]
-    private void RPC_Heal(int healAmount)
+    private void RPC_ApplyHeal(int healAmount)
     {
         if (isDead) return;
 
@@ -189,9 +145,35 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
             Debug.Log($"{gameObject.name} healed: {oldHealth} -> {CurrentHealth} (+{healAmount})");
             OnHealthChanged?.Invoke(CurrentHealth);
         }
+    }
+
+    // ===== INTERNAL: Damage logic (Host only) =====
+    private void ApplyDamage(int damageAmount)
+    {
+        // Host applies damage and syncs to all clients
+        if (PhotonNetwork.IsConnected)
+        {
+            photonView.RPC(nameof(RPC_ApplyDamage), RpcTarget.All, damageAmount);
+        }
         else
         {
-            Debug.Log($"Healing had no effect (already at max health: {CurrentHealth}/{maxHealth})");
+            // Singleplayer: Direct call
+            RPC_ApplyDamage(damageAmount);
+        }
+    }
+
+    // ===== INTERNAL: Heal logic (Host only) =====
+    private void ApplyHeal(int healAmount)
+    {
+        // Host applies heal and syncs to all clients
+        if (PhotonNetwork.IsConnected)
+        {
+            photonView.RPC(nameof(RPC_ApplyHeal), RpcTarget.All, healAmount);
+        }
+        else
+        {
+            // Singleplayer: Direct call
+            RPC_ApplyHeal(healAmount);
         }
     }
 
