@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Photon.Pun;
 
 public class HealthBar : MonoBehaviour
 {
@@ -19,7 +20,7 @@ public class HealthBar : MonoBehaviour
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // Initialise visibility based on settings
+        // Initialize visibility based on settings
         if (showOnlyWhenDamaged && !isPlayerHealthBar)
         {
             canvasGroup.alpha = 0;
@@ -50,6 +51,20 @@ public class HealthBar : MonoBehaviour
         }
 
         health = newHealth;
+
+        // MULTIPLAYER: Check if this health bar should be visible
+        if (isPlayerHealthBar && PhotonNetwork.IsConnected)
+        {
+            PhotonView pv = health.GetComponent<PhotonView>();
+            if (pv != null && !pv.IsMine)
+            {
+                // Hide health bar for other players
+                canvasGroup.alpha = 0;
+                Debug.Log($"HealthBar hidden for remote player {health.gameObject.name}");
+                return; // Don't initialize listeners for other players
+            }
+        }
+
         InitializeHealthBar();
     }
 
@@ -66,24 +81,10 @@ public class HealthBar : MonoBehaviour
         Debug.Log($"HealthBar initialized for {health.gameObject.name}");
     }
 
-    private void InitializeHealthBarVisibility()
-    {
-        if (showOnlyWhenDamaged && !isPlayerHealthBar)
-        {
-            // Force hide enemy health bars at start
-            canvasGroup.alpha = 0;
-            Debug.Log("Enemy health bar hidden at start");
-        }
-        else
-        {
-            canvasGroup.alpha = 1;
-        }
-    }
-
     private void UpdateHealthBar(int currentHealth)
     {
         Debug.Log($"Health bar updating to: {currentHealth}");
-        
+
         if (healthFillImage != null && health != null)
         {
             float healthPercentage = (float)currentHealth / health.MaxHealth;

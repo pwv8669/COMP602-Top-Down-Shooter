@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun;
 
-public class GunSystem : MonoBehaviour
+public class GunSystem : MonoBehaviourPunCallbacks
 {
     [Header("Selected weapon stats (set at match start)")]
     public int damage = 10;
@@ -18,10 +19,10 @@ public class GunSystem : MonoBehaviour
     public LayerMask targetMask;         // enemies
 
     [Header("Audio")]
-    public AudioSource audioSource;         // assign in inspector
-    public AudioClip audioClip;           // assign in inspector
+    public AudioSource audioSource;      // assign in inspector
+    public AudioClip audioClip;          // assign in inspector
 
-    // runtime
+    // Runtime
     int bulletsLeft;
     int shotsRemainingThisTap;
     bool readyToShoot = true;
@@ -37,17 +38,21 @@ public class GunSystem : MonoBehaviour
 
     void Update()
     {
+        // MULTIPLAYER: Only local player can shoot
+        if (photonView != null && !photonView.IsMine)
+            return;
+
         // Direct input handling
         if (Keyboard.current.rKey.wasPressedThisFrame)
         {
             StartCoroutine(ReloadRoutine());
         }
-        
+
         if (Mouse.current.leftButton.wasPressedThisFrame && !isAutomatic)
         {
             BeginTapFire();
         }
-        
+
         if (Mouse.current.leftButton.isPressed && isAutomatic)
         {
             TryShootOnce();
@@ -61,6 +66,10 @@ public class GunSystem : MonoBehaviour
     // ===== New Input System callbacks =====
     public void OnFire(InputAction.CallbackContext context)
     {
+        // MULTIPLAYER: Only local player
+        if (photonView != null && !photonView.IsMine)
+            return;
+
         if (context.performed)
         {
             fireHeld = true;
@@ -74,6 +83,10 @@ public class GunSystem : MonoBehaviour
 
     public void OnReload(InputAction.CallbackContext context)
     {
+        // MULTIPLAYER: Only local player
+        if (photonView != null && !photonView.IsMine)
+            return;
+
         if (!context.performed) return;
         if (reloading) return;
         if (bulletsLeft >= magazineSize) return; // already full
@@ -90,7 +103,7 @@ public class GunSystem : MonoBehaviour
     void TryShootOnce()
     {
         Debug.Log("=== SHOOT ATTEMPT ===");
-        
+
         if (reloading) { Debug.Log("Can't shoot: reloading"); return; }
         if (!readyToShoot) { Debug.Log("Can't shoot: not ready"); return; }
         if (Time.time < nextShotTime) { Debug.Log("Can't shoot: cooldown"); return; }
@@ -104,22 +117,22 @@ public class GunSystem : MonoBehaviour
         Ray camRay = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
         Debug.DrawRay(camRay.origin, camRay.direction * 100f, Color.blue, 2f);
         Debug.Log($"Camera ray: {camRay.origin} -> {camRay.direction}");
-        
+
         if (Physics.Raycast(camRay, out RaycastHit camHit, Mathf.Infinity))
         {
             Debug.Log($"Camera hit: {camHit.collider.name} at {camHit.point}");
-            
+
             // Step 2: Set target position for bullet raycast
             Vector3 targetPos = new Vector3(camHit.point.x, transform.position.y, camHit.point.z);
             Debug.Log($"Target position: {targetPos}");
-            
+
             // Step 3: Calculate direction from gun to target point
-            Vector3 direction = (targetPos - transform.position).normalized;    
+            Vector3 direction = (targetPos - transform.position).normalized;
             direction.y = 0; // Keep it horizontal
             direction = direction.normalized;
 
             Debug.Log($"Using camera direction: {direction}");
-            
+
             // Step 4: Apply spread
             if (spreadDegrees > 0f)
             {
@@ -128,10 +141,10 @@ public class GunSystem : MonoBehaviour
                 direction = spreadRot * direction;
                 Debug.Log($"After spread: {direction}");
             }
-            
+
             // Visual debug ray
             Debug.DrawRay(transform.position, direction * range, Color.red, 2f);
-            
+
             // Step 5: Raycast from gun towards direction
             Vector3 shootOrigin = new Vector3(transform.position.x, 1.0f, transform.position.z); // Character height
 
@@ -141,12 +154,33 @@ public class GunSystem : MonoBehaviour
                 Debug.Log($"HIT ENEMY: {enemyHit.collider.name}");
                 Debug.Log($"Hit point: {enemyHit.point}");
                 Debug.Log($"Enemy layer: {enemyHit.collider.gameObject.layer}");
-                
+
                 Health enemyHealth = enemyHit.collider.GetComponent<Health>();
                 if (enemyHealth != null)
                 {
                     Debug.Log($"Applying {damage} damage to enemy");
-                    enemyHealth.TakeDamage(damage);
+
+                    // MULTIPLAYER: Send damage request
+                    if (PhotonNetwork.IsConnected)
+                    {
+                        PhotonView targetPV = enemyHit.collider.GetComponent<PhotonView>();
+                        if (targetPV != null)
+                        {
+                            // Tell the target to take damage via its Health component
+                            enemyHealth.TakeDamage(damage);
+                            Debug.Log($"[MULTIPLAYER] Damage request sent to {enemyHit.collider.name}");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"No PhotonView on {enemyHit.collider.name}");
+                        }
+                    }
+                    else
+                    {
+                        // SINGLEPLAYER: Direct damage
+                        enemyHealth.TakeDamage(damage);
+                    }
+
                     Debug.Log($"Enemy health now: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}");
                 }
                 else
@@ -160,9 +194,15 @@ public class GunSystem : MonoBehaviour
                 Debug.Log("Check: Enemy layer, Collider, Range, Position");
             }
 
-            if(audioSource && audioClip)
+            // MULTIPLAYER: Broadcast shoot effects (sound, animation)
+            if (PhotonNetwork.IsConnected && photonView != null)
             {
-                audioSource.PlayOneShot(audioClip);
+                photonView.RPC(nameof(RPC_PlayShootEffects), RpcTarget.All);
+            }
+            else
+            {
+                // SINGLEPLAYER: Play directly
+                PlayShootEffects();
             }
 
             // Ammo management
@@ -181,6 +221,22 @@ public class GunSystem : MonoBehaviour
             Debug.LogWarning("Could not raycast from camera to mouse");
             readyToShoot = true;
         }
+    }
+
+    // ===== RPC: Play shoot effects on all clients =====
+    [PunRPC]
+    void RPC_PlayShootEffects()
+    {
+        PlayShootEffects();
+    }
+
+    void PlayShootEffects()
+    {
+        if (audioSource && audioClip)
+        {
+            audioSource.PlayOneShot(audioClip);
+        }
+        // Add muzzle flash, particles, etc. here
     }
 
     void ResetShot() => readyToShoot = true;
@@ -210,7 +266,7 @@ public class GunSystem : MonoBehaviour
         if (refillMag)
             bulletsLeft = magazineSize;
 
-        // reset gates
+        // Reset gates
         reloading = false;
         readyToShoot = true;
         nextShotTime = 0f;

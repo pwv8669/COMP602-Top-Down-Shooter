@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.AI;
+using Photon.Pun;
 
-public class EnemyAI : MonoBehaviour
+public class EnemyAI : MonoBehaviourPunCallbacks
 {
     [Header("References")]
     public Transform Target;
@@ -10,7 +11,6 @@ public class EnemyAI : MonoBehaviour
     private NavMeshAgent m_Agent;
     private float m_Distance;
 
-    
     [Header("Attack")]
     public int damage = 10;
     public float timeBetweenAttacks = 1f;
@@ -18,7 +18,7 @@ public class EnemyAI : MonoBehaviour
 
     [Header("States")]
     public float sightRange = 15f;
-    
+
     private bool playerInSightRange, playerInAttackRange;
 
     private void Start()
@@ -28,6 +28,13 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
+        // MULTIPLAYER: Only host controls enemy AI
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
+        {
+            // Clients just watch, don't control enemy
+            return;
+        }
+
         // Find closest player (multiplayer support)
         Target = FindClosestPlayer();
 
@@ -78,7 +85,12 @@ public class EnemyAI : MonoBehaviour
         if (!alreadyAttacked)
         {
             Health playerHealth = Target.GetComponent<Health>();
-            if (playerHealth != null) playerHealth.TakeDamage(damage);
+            if (playerHealth != null)
+            {
+                // MULTIPLAYER: Mark this as enemy attack so Health.cs can route correctly
+                playerHealth.TakeDamage(damage, attackerIsEnemy: true);
+                Debug.Log($"[EnemyAI] Enemy attacked {Target.name} for {damage} damage");
+            }
 
             alreadyAttacked = true;
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
