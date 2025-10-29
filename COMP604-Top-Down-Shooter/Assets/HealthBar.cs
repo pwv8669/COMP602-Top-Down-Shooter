@@ -104,4 +104,13 @@ public class HealthBar : MonoBehaviour
             }
         }
     }
+
+    private void LateUpdate()
+    {
+        if (!isPlayerHealthBar)
+        {
+            // Set local rotation to tilt 45 degrees forward
+            transform.localRotation = Quaternion.Euler(45f, 0f, 0f);
+        }
+    }
 }

@@ -102,6 +102,7 @@ public class GunSystem : MonoBehaviour
 
         // Step 1: Raycast from camera through mouse
         Ray camRay = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Debug.DrawRay(camRay.origin, camRay.direction * 100f, Color.blue, 2f);
         Debug.Log($"Camera ray: {camRay.origin} -> {camRay.direction}");
         
         if (Physics.Raycast(camRay, out RaycastHit camHit, Mathf.Infinity))
@@ -135,7 +136,6 @@ public class GunSystem : MonoBehaviour
             Vector3 shootOrigin = new Vector3(transform.position.x, 1.0f, transform.position.z); // Character height
 
             Debug.Log($"Shooting from {shootOrigin} with range {range}");
-            
             if (Physics.Raycast(shootOrigin, direction, out RaycastHit enemyHit, range, targetMask))
             {
                 Debug.Log($"HIT ENEMY: {enemyHit.collider.name}");
@@ -146,7 +146,7 @@ public class GunSystem : MonoBehaviour
                 if (enemyHealth != null)
                 {
                     Debug.Log($"Applying {damage} damage to enemy");
-                    enemyHealth.TakeDamage(damage);
+                    enemyHealth.TakeDamage(damage, enemyHit.point);
                     Debug.Log($"Enemy health now: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}");
                 }
                 else

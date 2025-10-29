@@ -7,13 +7,19 @@ public class GridManager : MonoBehaviour
     {
         Empty,
         Hallway,
-        Intersection
+        Intersection,
+        EnemySpawnPoint,
+        Room,
+        Room2,
+        Room3,
+        Safezone  // New: Blue safe zone in center where enemies cannot enter
     }
     public int gridWidth = 20;
     public int gridHeight = 20;
     public int numberOfWalkers = 1;
     public int walkerLifetime = 50;
     public int location = 1;
+    public int[] W3roomSizes = new int[] { 3, 4, 5 };
     private List<HallwayWalker> walkers;
 
     public MapGenerator mapGenerator;
@@ -32,85 +38,193 @@ public class GridManager : MonoBehaviour
     {
         switch (location)
         {
-            case 2:
-                // Three random rows and columns
-                int[] randomRows = new int[3];
-                randomRows[0] = 10;
-                randomRows[1] = Random.Range(3, gridWidth - 3);
-                randomRows[2] = Random.Range(3, gridWidth - 3);
+            case 1:
+            default:
+                // Room-based generation with connecting hallways
+                // int roomCount = Random.Range(5, 10);
+                int roomCount = 10;
+                Vector2Int currentPos = new Vector2Int(gridWidth / 2, gridHeight / 2);
+                grid[currentPos.x, currentPos.y] = CellState.Hallway;
 
-                int[] randomColumns = new int[3];
-                randomColumns[0] = Random.Range(3, gridHeight - 3);
-                randomColumns[1] = Random.Range(3, gridHeight - 3);
-                randomColumns[2] = Random.Range(3, gridHeight - 3);
-
-                // Fill entire rows
-                for (int i = 0; i < randomRows.Length; i++)
+                for (int i = 0; i < roomCount; i++)
                 {
-                    int y = Mathf.Clamp(randomRows[i], 0, gridHeight - 1);
-                    for (int x = Random.Range(0, 2); x < Random.Range(gridWidth - 4, gridWidth - 2); x++)
+                    Vector2Int startPos = currentPos;
+                    Vector2Int endPos;
+
+                    // Determine direction based on distance from edges
+                    float horizontalBias = 0.5f;
+                    float verticalBias = 0.5f;
+                    
+                    // Bias away from left edge
+                    if (startPos.x < gridWidth / 4)
+                        horizontalBias += 0.3f;
+                    // Bias away from right edge
+                    else if (startPos.x > gridWidth * 3 / 4)
+                        horizontalBias -= 0.3f;
+                    
+                    // Bias away from bottom edge
+                    if (startPos.y < gridHeight / 4)
+                        verticalBias += 0.3f;
+                    // Bias away from top edge
+                    else if (startPos.y > gridHeight * 3 / 4)
+                        verticalBias -= 0.3f;
+                    
+                    bool moveHorizontally = Random.value > 0.5f;
+                    
+                    if (moveHorizontally)
                     {
-                        var state = grid[x, y];
-                        if (state == CellState.Empty)
-                            grid[x, y] = CellState.Hallway;
-                        else if (state == CellState.Hallway)
-                            grid[x, y] = CellState.Intersection;
+                        // Choose direction: positive (right) if bias > 0.5, negative (left) otherwise
+                        int direction = Random.value > 0.5f ? -1 : 1;
+                        int distance = Random.Range(3, 8);
+                        int newX = Mathf.Clamp(startPos.x + (distance * direction), 0, gridWidth - 1);
+                        endPos = new Vector2Int(newX, startPos.y);
                     }
+                    else
+                    {
+                        // Choose direction: positive (up) if bias > 0.5, negative (down) otherwise
+                        int direction = Random.value > 0.5f ? -1 : 1;
+                        int distance = Random.Range(3, 8);
+                        int newY = Mathf.Clamp(startPos.y + (distance * direction), 0, gridHeight - 1);
+                        endPos = new Vector2Int(startPos.x, newY);
+                    }
+
+                    // Draw hallway between start and end
+                    if (startPos.x == endPos.x)
+                    {
+                        // Vertical hallway
+                        int minY = Mathf.Min(startPos.y, endPos.y);
+                        int maxY = Mathf.Max(startPos.y, endPos.y);
+                        for (int y = minY; y <= maxY; y++)
+                        {
+                            var state = grid[startPos.x, y];
+                            if (state == CellState.Empty) grid[startPos.x, y] = CellState.Hallway;
+                        }
+                    }
+                    else
+                    {
+                        // Horizontal hallway
+                        int minX = Mathf.Min(startPos.x, endPos.x);
+                        int maxX = Mathf.Max(startPos.x, endPos.x);
+                        for (int x = minX; x <= maxX; x++)
+                        {
+                            var state = grid[x, startPos.y];
+                            if (state == CellState.Empty) grid[x, startPos.y] = CellState.Hallway;
+                        }
+                    }
+
+                    // Generate room at end point
+                    int roomWidth = Random.Range(2, 4);
+                    int roomHeight = Random.Range(2, 4);
+
+                    // Calculate possible room positions that overlap the end point
+                    int minRoomX = endPos.x - roomWidth + 1;
+                    int maxRoomX = endPos.x;
+                    int minRoomY = endPos.y - roomHeight + 1;
+                    int maxRoomY = endPos.y;
+
+                    int roomX = Random.Range(minRoomX, maxRoomX + 1);
+                    int roomY = Random.Range(minRoomY, maxRoomY + 1);
+
+                    // Clamp room bounds to grid
+                    int clampedStartX = Mathf.Max(0, roomX);
+                    int clampedEndX = Mathf.Min(gridWidth - 1, roomX + roomWidth - 1);
+                    int clampedStartY = Mathf.Max(0, roomY);
+                    int clampedEndY = Mathf.Min(gridHeight - 1, roomY + roomHeight - 1);
+
+                    // Fill room
+                    for (int x = clampedStartX; x <= clampedEndX; x++)
+                    {
+                        for (int y = clampedStartY; y <= clampedEndY; y++)
+                        {
+                            var state = grid[x, y];
+                            grid[x, y] = CellState.Room;
+                        }
+                    }
+
+                    // Update current position to a random point in the generated room
+                    currentPos = new Vector2Int(
+                        Random.Range(clampedStartX, clampedEndX + 1),
+                        Random.Range(clampedStartY, clampedEndY + 1)
+                    );
+                }
+                break;
+            case 2:
+                // Generate vertical hallways (columns)
+                int xtemp = Random.Range(0, 5);
+                while (xtemp < gridWidth)
+                {
+                    if (Random.value < 0.3f)
+                    {
+                        for (int y = 0; y < gridHeight; y++)
+                        {
+                            var state = grid[xtemp, y];
+                            grid[xtemp, y] = CellState.Room2;
+                        }
+                    }
+                    else
+                    {
+                        for (int y = 0; y < gridHeight; y++)
+                        {
+                            var state = grid[xtemp, y];
+                            grid[xtemp, y] = CellState.Room;
+                        }
+                    }
+                    
+                    xtemp += Random.Range(2, 5);
                 }
 
-                // Fill entire columns
-                for (int i = 0; i < randomColumns.Length; i++)
+                // Generate horizontal hallways (rows)
+                int ytemp = Random.Range(0, 5);
+                while (ytemp < gridHeight)
                 {
-                    int x = Mathf.Clamp(randomColumns[i], 0, gridWidth - 1);
-                    for (int y = Random.Range(0, 2); y < Random.Range(gridHeight - 4, gridHeight - 2); y++)
+                    for (int x_coord = 0; x_coord < gridWidth; x_coord++)
                     {
-                        var state = grid[x, y];
-                        if (state == CellState.Empty)
-                            grid[x, y] = CellState.Hallway;
-                        else if (state == CellState.Hallway)
-                            grid[x, y] = CellState.Intersection;
+                        var state = grid[x_coord, ytemp];
+                        grid[x_coord, ytemp] = CellState.Room;
                     }
+                    ytemp += Random.Range(2, 5);
                 }
                 break;
 
-            case 1:
-            default:
-                walkers = new List<HallwayWalker>();
-
-                // Create and initialize walkers
-                for (int i = 0; i < numberOfWalkers; i++)
+            case 3:
+                int roomSize1 = Random.Range(2, 4);
+                int roomSize2 = Random.Range(2, 4);
+                int roomSize3 = Random.Range(2, 4);
+                W3roomSizes = new int[] { roomSize1, roomSize2, roomSize3 };
+                int totalHeight = roomSize1 + roomSize2 + roomSize3;
+                for (int x = 0; x < gridWidth; x++)
                 {
-                    // Start each walker at the center of the grid
-                    Vector2Int startPosition = new Vector2Int(gridWidth / 2, gridHeight / 2);
-
-                    HallwayWalker newWalker = new HallwayWalker(startPosition, this);
-                    walkers.Add(newWalker);
-
-                    // Mark starting cell
-                    grid[startPosition.x, startPosition.y] = CellState.Hallway;
-                }
-
-                // Run the simulation
-                for (int i = 0; i < walkerLifetime; i++)
-                {
-                    foreach (HallwayWalker walker in walkers)
+                    for (int y = 5; y < totalHeight + 5; y++)
                     {
-                        Vector2Int newPos = walker.Move();
-
-                        // Update the grid based on walker's new position
-                        // Check if cell is already a hallway
-                        if (grid[newPos.x, newPos.y] == CellState.Hallway)
-                        {
-                            grid[newPos.x, newPos.y] = CellState.Intersection;
-                        }
-                        else
-                        {
-                            grid[newPos.x, newPos.y] = CellState.Hallway;
-                        }
+                        grid[x, y] = CellState.Room;
                     }
                 }
                 break;
         }
+
+        Vector2Int? first = null;
+        Vector2Int? last = null;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (grid[x, y] == CellState.Room)
+                {
+                    if (first == null)
+                        first = new Vector2Int(x, y);
+                    last = new Vector2Int(x, y);
+                }
+            }
+        }
+
+        if (first.HasValue) grid[first.Value.x, first.Value.y] = CellState.EnemySpawnPoint;
+        if (last.HasValue) grid[last.Value.x, last.Value.y] = CellState.EnemySpawnPoint;
+
+        // New: Create safe zone at center of grid
+        int midX = gridWidth / 2;
+        int midY = gridHeight / 2;
+        grid[midX, midY] = CellState.Safezone;
 
         mapGenerator.GenerateMap();
     }
@@ -153,6 +267,12 @@ public class GridManager : MonoBehaviour
                         break;
                     case CellState.Intersection:
                         Gizmos.color = Color.cyan;
+                        break;
+                    case CellState.EnemySpawnPoint:
+                        Gizmos.color = Color.red;
+                        break;
+                    case CellState.Safezone:
+                        Gizmos.color = Color.blue;
                         break;
                 }
 
