@@ -146,7 +146,7 @@ public class GunSystem : MonoBehaviour
                 if (enemyHealth != null)
                 {
                     Debug.Log($"Applying {damage} damage to enemy");
-                    enemyHealth.TakeDamage(damage);
+                    enemyHealth.TakeDamage(damage, enemyHit.point);
                     Debug.Log($"Enemy health now: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}");
                 }
                 else

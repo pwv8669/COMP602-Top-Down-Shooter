@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.Events; 
+using UnityEngine.Events;
 
 public class Health : MonoBehaviour
 {
@@ -9,6 +9,10 @@ public class Health : MonoBehaviour
 
     [Header("Health Settings")]
     [SerializeField] private int maxHealth = 100;
+    [SerializeField] private bool isPlayer = false;
+
+    [Header("Effects")]
+    [SerializeField] private GameObject bloodEffectPrefab; // Reference to your blood particle prefab
 
     public int CurrentHealth { get; private set; }
     public int MaxHealth => maxHealth;
@@ -28,12 +32,19 @@ public class Health : MonoBehaviour
         OnHealthChanged?.Invoke(CurrentHealth);
     }
 
-    public void TakeDamage(int damageAmount)
+    // This method now accepts a position for where the damage occurred
+    public void TakeDamage(int damageAmount, Vector3 hitPosition = default)
     {
+        // Instantiate the blood particle effect at the point of impact
+        if (bloodEffectPrefab != null && hitPosition != default)
+        {
+            Instantiate(bloodEffectPrefab, hitPosition, Quaternion.Euler(90, 0, 0));
+        }
+
         // Clamp the health so it never goes below 0 or above maxHealth
         CurrentHealth = Mathf.Clamp(CurrentHealth - damageAmount, 0, maxHealth);
 
-        // Let's player know the health has changed 
+        // Let's player know the health has changed
         OnHealthChanged?.Invoke(CurrentHealth);
 
         // Check if player is out of health
@@ -63,10 +74,16 @@ public class Health : MonoBehaviour
 
     private void Die()
     {
-        OnDied?.Invoke();
-
         // Log and disable the object
         Debug.Log(gameObject.name + " died!");
+
+        OnDied?.Invoke();
+
+        if (isPlayer && DeathManager.Instance != null)
+        {
+            DeathManager.Instance.ShowDeathScreen();
+        }
+        
         Destroy(gameObject);
     }
 }

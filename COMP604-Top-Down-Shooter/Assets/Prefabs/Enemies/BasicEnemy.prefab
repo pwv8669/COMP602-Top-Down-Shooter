@@ -369,6 +369,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   maxHealth: 100
+  bloodEffectPrefab: {fileID: 6579625736401597151, guid: 3cfe2d289fd1eae47a47d154a45d7f14, type: 3}
 --- !u!114 &3440913722874191479
 MonoBehaviour:
   m_ObjectHideFlags: 0
