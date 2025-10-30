@@ -1,135 +1,152 @@
 using UnityEngine;
 using System.Collections;
+using Photon.Pun;
 
-public class PotionSpawner : MonoBehaviour
+/// <summary>
+/// Spawns health potions around a random position
+/// Host-only spawning with proper multiplayer synchronization
+/// FIXED: Removed SetParent to prevent position desync
+/// </summary>
+public class PotionSpawner : MonoBehaviourPunCallbacks
 {
     [Header("Potion Prefabs")]
     [SerializeField] private GameObject smallHealthPotionPrefab;
     [SerializeField] private GameObject largeHealthPotionPrefab;
-    
+
     [Header("Spawn Settings")]
     [SerializeField] private int maxSmallPotions = 10;
     [SerializeField] private int maxLargePotions = 3;
     [SerializeField] private float spawnRadius = 15f;
     [SerializeField] private float spawnInterval = 5f;
-    
+    [SerializeField] private Vector3 mapCenter = new Vector3(100f, 1.1f, 100f);
+
     private int currentSmallPotions = 0;
     private int currentLargePotions = 0;
-    private Transform playerTransform;
-    
+
+    private const string SMALL_POTION_NAME = "SmallHealthPotion";
+    private const string LARGE_POTION_NAME = "LargeHealthPotion";
+
     private void Start()
     {
-        // Find the player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        Debug.Log($"[PotionSpawner] === INSPECTOR SETTINGS ===");
+        Debug.Log($"[PotionSpawner] mapCenter = {mapCenter}");
+        Debug.Log($"[PotionSpawner] spawnRadius = {spawnRadius}");
+        Debug.Log($"[PotionSpawner] IsMasterClient = {PhotonNetwork.IsMasterClient}");
+        Debug.Log($"[PotionSpawner] IsConnected = {PhotonNetwork.IsConnected}");
+
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
         {
-            playerTransform = player.transform;
+            Debug.Log("[PotionSpawner] Client: Not spawning potions (host handles this)");
+            return;
         }
-        else
-        {
-            Debug.LogError("PotionSpawner: No player found! Make sure your player has the 'Player' tag.");
-        }
-        
-        // Spawn some initial potions
+
         for (int i = 0; i < 3; i++)
         {
-            SpawnPotion(smallHealthPotionPrefab, false);
+            SpawnPotion(SMALL_POTION_NAME, false);
         }
-        
-        // Start continuous spawning
+
         StartCoroutine(SpawnPotionsRoutine());
     }
-    
+
     private IEnumerator SpawnPotionsRoutine()
     {
         while (true)
         {
             yield return new WaitForSeconds(spawnInterval);
-            
-            // Random chance to spawn different potions
+
+            if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
+                continue;
+
             float randomValue = Random.value;
-            
+
             if (randomValue < 0.7f && currentSmallPotions < maxSmallPotions)
             {
-                // 70% chance for small potion
-                SpawnPotion(smallHealthPotionPrefab, false);
+                SpawnPotion(SMALL_POTION_NAME, false);
             }
             else if (randomValue < 0.9f && currentLargePotions < maxLargePotions)
             {
-                // 20% chance for large potion
-                SpawnPotion(largeHealthPotionPrefab, true);
+                SpawnPotion(LARGE_POTION_NAME, true);
             }
-            // 10% chance to spawn nothing
         }
     }
-    
-    private void SpawnPotion(GameObject potionPrefab, bool isLargePotion)
+
+    private void SpawnPotion(string potionPrefabName, bool isLargePotion)
     {
-        if (potionPrefab == null) 
+        if (string.IsNullOrEmpty(potionPrefabName))
         {
-            Debug.LogWarning("Potion prefab is null! Make sure to assign prefabs in the inspector.");
+            Debug.LogError("[PotionSpawner] Potion prefab name is null or empty!");
             return;
         }
-        
-        if (playerTransform == null)
-        {
-            Debug.LogWarning("PotionSpawner: No player transform found!");
-            return;
-        }
-        
-        // Get random position around player
+
         Vector3 spawnPosition = GetRandomSpawnPosition();
-        
-        Debug.Log($"Spawning potion at position: {spawnPosition}");
-        
-        GameObject potion = Instantiate(potionPrefab, spawnPosition, Quaternion.identity);
-        
-        // Set up the potion values
-        HealthPotion healthPotion = potion.GetComponent<HealthPotion>();
-        if (healthPotion != null)
+
+        Debug.Log($"[PotionSpawner] Spawning {potionPrefabName} at position: {spawnPosition}");
+
+        GameObject potion;
+        int healAmount = isLargePotion ? 50 : 10;
+
+        if (PhotonNetwork.IsConnected)
         {
-            if (isLargePotion)
+            object[] instantiationData = new object[] { healAmount, isLargePotion };
+
+            potion = PhotonNetwork.Instantiate(
+                potionPrefabName,
+                spawnPosition,
+                Quaternion.identity,
+                0,
+                instantiationData
+            );
+
+            Debug.Log($"[MULTIPLAYER] Spawned potion via PhotonNetwork: {potionPrefabName} at {spawnPosition}");
+        }
+        else
+        {
+            GameObject prefab = isLargePotion ? largeHealthPotionPrefab : smallHealthPotionPrefab;
+            if (prefab == null)
             {
-                healthPotion.healAmount = 50;
-                healthPotion.isLargePotion = true; // Set the flag
-                currentLargePotions++;
+                Debug.LogError($"[PotionSpawner] Prefab is null for {potionPrefabName}!");
+                return;
             }
-            else
+            potion = Instantiate(prefab, spawnPosition, Quaternion.identity);
+
+            HealthPotion healthPotion = potion.GetComponent<HealthPotion>();
+            if (healthPotion != null)
             {
-                healthPotion.healAmount = 10;
-                healthPotion.isLargePotion = false; // Set the flag
-                currentSmallPotions++;
+                healthPotion.healAmount = healAmount;
+                healthPotion.isLargePotion = isLargePotion;
             }
         }
-        
-        // Parent to this spawner for organization
-        potion.transform.SetParent(transform);
-        
-        Debug.Log($"Successfully spawned {(isLargePotion ? "Large" : "Small")} health potion at {spawnPosition}");
+
+        if (isLargePotion)
+            currentLargePotions++;
+        else
+            currentSmallPotions++;
+
+        // DO NOT parent networked objects!
+        // This causes position desync because PhotonTransformView syncs local position
+        // potion.transform.SetParent(transform);  // REMOVED
+
+        Debug.Log($"[PotionSpawner] Successfully spawned {(isLargePotion ? "Large" : "Small")} health potion at {spawnPosition}");
     }
-    
+
     private Vector3 GetRandomSpawnPosition()
     {
-        if (playerTransform == null)
-        {
-            Debug.LogError("Player transform not found!");
-            return Vector3.zero;
-        }
-        
-        // Get random point around player within spawn radius (X and Z only)
         Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-        
-        // Use player's Y position so potions spawn at the same height as player
-        Vector3 spawnPosition = playerTransform.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
-        
-        Debug.Log($"Player Y: {playerTransform.position.y}, Spawn Y: {spawnPosition.y}");
-        
+
+        Vector3 spawnPosition = new Vector3(
+            mapCenter.x + randomCircle.x,
+            mapCenter.y,
+            mapCenter.z + randomCircle.y
+        );
+
         return spawnPosition;
     }
-    
-    // Called when a potion is collected
+
     public void OnPotionCollected(bool isLargePotion)
     {
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.IsMasterClient)
+            return;
+
         if (isLargePotion)
         {
             currentLargePotions--;
@@ -138,20 +155,7 @@ public class PotionSpawner : MonoBehaviour
         {
             currentSmallPotions--;
         }
-    }
 
-    /*private void Update()
-    {
-        // Press Space to manually spawn a potion for testing
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            SpawnPotion(smallHealthPotionPrefab, false);
-            Debug.Log("Manually spawned potion with Space key");
-            
-            // Count how many potions exist in scene
-            int potionCount = GameObject.FindObjectsOfType<HealthPotion>().Length;
-            Debug.Log($"Total potions in scene: {potionCount}");
-        }
+        Debug.Log($"[PotionSpawner] Potion collected. Small: {currentSmallPotions}/{maxSmallPotions}, Large: {currentLargePotions}/{maxLargePotions}");
     }
-    */
 }

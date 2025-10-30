@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Photon.Pun;
 
 public class HealthBar : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class HealthBar : MonoBehaviour
     [SerializeField] private bool showOnlyWhenDamaged = false;
 
     private CanvasGroup canvasGroup;
+    private bool isInitialized = false;
 
     private void Start()
     {
@@ -18,7 +20,7 @@ public class HealthBar : MonoBehaviour
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // Initialise visibility based on settings
+        // Initialize visibility based on settings
         if (showOnlyWhenDamaged && !isPlayerHealthBar)
         {
             canvasGroup.alpha = 0;
@@ -30,35 +32,59 @@ public class HealthBar : MonoBehaviour
             Debug.Log("Player health bar visible at start");
         }
 
+        // Try to initialize if health is already assigned (for enemies)
         if (health != null)
         {
-            health.OnHealthChanged.AddListener(UpdateHealthBar);
-            health.OnDied.AddListener(OnEntityDied);
+            InitializeHealthBar();
         }
-        else
-        {
-            Debug.LogError("Health component not assigned to HealthBar on " + gameObject.name);
-        }
+        // For player health bar, health will be assigned later by GameManager via SetHealth()
     }
 
-    private void InitializeHealthBarVisibility()
+    // Public method to set health reference and initialize
+    public void SetHealth(Health newHealth)
     {
-        if (showOnlyWhenDamaged && !isPlayerHealthBar)
+        if (health != null)
         {
-            // Force hide enemy health bars at start
-            canvasGroup.alpha = 0;
-            Debug.Log("Enemy health bar hidden at start");
+            // Remove old listeners
+            health.OnHealthChanged.RemoveListener(UpdateHealthBar);
+            health.OnDied.RemoveListener(OnEntityDied);
         }
-        else
+
+        health = newHealth;
+
+        // MULTIPLAYER: Check if this health bar should be visible
+        if (isPlayerHealthBar && PhotonNetwork.IsConnected)
         {
-            canvasGroup.alpha = 1;
+            PhotonView pv = health.GetComponent<PhotonView>();
+            if (pv != null && !pv.IsMine)
+            {
+                // Hide health bar for other players
+                canvasGroup.alpha = 0;
+                Debug.Log($"HealthBar hidden for remote player {health.gameObject.name}");
+                return; // Don't initialize listeners for other players
+            }
         }
+
+        InitializeHealthBar();
+    }
+
+    private void InitializeHealthBar()
+    {
+        if (health == null || isInitialized) return;
+
+        health.OnHealthChanged.AddListener(UpdateHealthBar);
+        health.OnDied.AddListener(OnEntityDied);
+        isInitialized = true;
+
+        // Update to current health
+        UpdateHealthBar(health.CurrentHealth);
+        Debug.Log($"HealthBar initialized for {health.gameObject.name}");
     }
 
     private void UpdateHealthBar(int currentHealth)
     {
         Debug.Log($"Health bar updating to: {currentHealth}");
-        
+
         if (healthFillImage != null && health != null)
         {
             float healthPercentage = (float)currentHealth / health.MaxHealth;

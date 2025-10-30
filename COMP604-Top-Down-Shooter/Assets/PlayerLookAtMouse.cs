@@ -1,12 +1,32 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun;
 
 public class PlayerLookAtMouse : MonoBehaviour
 {
     public Camera mainCamera;
+    private PhotonView photonView;
+
+    void Start()
+    {
+        photonView = GetComponent<PhotonView>();
+
+        // Find main camera if not assigned
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+    }
 
     void Update()
     {
+        // Do not run if not local player
+        if (photonView != null && !photonView.IsMine)
+            return;
+
+        // Do nothing if there is no camera
+        if (mainCamera == null) return;
+
         // Get mouse position on screen.
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         // Create a ray from the camera to the mouse.

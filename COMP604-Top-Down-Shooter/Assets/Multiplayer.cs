@@ -1,300 +1,159 @@
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-using System.Collections.Generic;
 
-public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCallbacks
+public class Multiplayer : MonoBehaviourPunCallbacks
 {
-    [Header("Room Settings")]
-    public int maxPlayersPerRoom = 4;
+    public int maxPlayersPerRoom = 2;
     public string gameVersion = "1.0";
 
-    [Header("Debug Info")]
-    public bool showDebugLogs = true;
-
-    [Header("Manual Testing - Set Room Code Here")]
-    public string manualRoomCode = "";  // Inspector에서 설정 가능
-
-    // Current room status
-    private bool isConnectedToPhoton = false;
-    private bool isInLobby = false;
-    private string lastCreatedRoomCode = "";
+    private bool isConnecting = false;
 
     void Start()
     {
-        Debug.Log("[Multiplayer] === STARTING PHOTON CONNECTION ===");
-        PhotonNetwork.AddCallbackTarget(this);
-
-        // 음성 채팅을 위한 설정 추가
-        PhotonNetwork.EnableCloseConnection = true;
-
-#if UNITY_EDITOR
-        if (PhotonNetwork.IsConnected || PhotonNetwork.NetworkClientState != ClientState.Disconnected)
-        {
-            Debug.LogWarning($"[Multiplayer] Editor - Disconnecting previous connection...");
-            PhotonNetwork.Disconnect();
-            Invoke("RetryConnection", 2f);
-            return;
-        }
-#endif
-
-        StartConnection();
+        DontDestroyOnLoad(gameObject);
     }
 
-    void Update()
+    public void Connect()
     {
-        // TESTING CONTROLS - Remove for production
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            Debug.Log("[TEST] Creating room...");
-            CreateRoomWithCode();
-        }
+        if (isConnecting || PhotonNetwork.IsConnected) return;
 
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            if (!string.IsNullOrEmpty(manualRoomCode))
-            {
-                Debug.Log($"[TEST] Joining room: {manualRoomCode}");
-                JoinRoomWithCode(manualRoomCode);
-            }
-            else if (!string.IsNullOrEmpty(lastCreatedRoomCode))
-            {
-                Debug.Log($"[TEST] Joining last created room: {lastCreatedRoomCode}");
-                JoinRoomWithCode(lastCreatedRoomCode);
-            }
-            else
-            {
-                Debug.LogWarning("[TEST] No room code available! Set manualRoomCode in inspector or create a room first.");
-            }
-        }
-
-        if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            if (PhotonNetwork.InRoom)
-            {
-                Debug.Log("[TEST] Leaving room...");
-                PhotonNetwork.LeaveRoom();
-            }
-        }
-
-        // Display current status every few seconds
-        if (Time.frameCount % 300 == 0) // Every 5 seconds at 60fps
-        {
-            Debug.Log($"[STATUS] Connected: {isConnectedToPhoton} | InLobby: {isInLobby} | InRoom: {PhotonNetwork.InRoom} | Players: {(PhotonNetwork.CurrentRoom?.PlayerCount ?? 0)}");
-        }
-    }
-
-    void RetryConnection()
-    {
-        Debug.Log("[Multiplayer] Retrying connection...");
-        StartConnection();
-    }
-
-    void StartConnection()
-    {
+        isConnecting = true;
+        PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.GameVersion = gameVersion;
         PhotonNetwork.NickName = "Player_" + Random.Range(1000, 9999);
 
-        Debug.Log($"[Multiplayer] Connecting as: {PhotonNetwork.NickName}");
         PhotonNetwork.ConnectUsingSettings();
+        Debug.Log("[Multiplayer] Connecting...");
     }
 
-    void OnDestroy()
-    {
-        PhotonNetwork.RemoveCallbackTarget(this);
-    }
+    #region Photon Callbacks
 
-    #region IConnectionCallbacks
-
-    public void OnConnected()
+    public override void OnConnectedToMaster()
     {
-        Debug.Log("*** OnConnected! ***");
-    }
-
-    public void OnConnectedToMaster()
-    {
-        isConnectedToPhoton = true;
-        isInLobby = true; // Skip lobby, directly ready for room operations
-        Debug.Log("*** OnConnectedToMaster! READY FOR ROOMS! ***");
-        Debug.Log("[Multiplayer] Press '1' to CREATE room, '2' to JOIN room, '3' to LEAVE room");
+        Debug.Log("[Multiplayer] Connected to Master");
         PhotonNetwork.JoinLobby();
     }
 
-    public void OnDisconnected(DisconnectCause cause)
+    public override void OnJoinedLobby()
     {
-        isConnectedToPhoton = false;
-        isInLobby = false;
-        Debug.LogError($"[Multiplayer] Disconnected: {cause}");
+        Debug.Log("[Multiplayer] Joined Lobby");
+        isConnecting = false;
     }
 
-    public void OnRegionListReceived(RegionHandler regionHandler)
+    public override void OnJoinedRoom()
     {
-        Debug.Log("[Multiplayer] Region list received");
+        Debug.Log($"[Multiplayer] Joined Room: {PhotonNetwork.CurrentRoom.Name}");
     }
 
-    public void OnCustomAuthenticationResponse(Dictionary<string, object> data) { }
-    public void OnCustomAuthenticationFailed(string debugMessage) { }
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        Debug.Log($"[Multiplayer] Player joined: {newPlayer.NickName}");
+    }
+
+    public override void OnCreateRoomFailed(short returnCode, string message)
+    {
+        Debug.LogError($"[Multiplayer] Create room failed: {message}");
+    }
+
+    public override void OnJoinRoomFailed(short returnCode, string message)
+    {
+        Debug.LogError($"[Multiplayer] Join room failed: {message}");
+    }
 
     #endregion
 
-    #region IMatchmakingCallbacks
+    #region Public Methods
 
-    public void OnJoinedLobby()
+    public void CreateRoomWithCode()
     {
-        isInLobby = true;
-        Debug.Log("*** OnJoinedLobby! READY FOR ROOMS! ***");
-        Debug.Log("[Multiplayer] Press '1' to CREATE room, '2' to JOIN room, '3' to LEAVE room");
-    }
-
-    public void OnLeftLobby()
-    {
-        isInLobby = false;
-    }
-
-    public void OnRoomListUpdate(List<RoomInfo> roomList) { }
-
-    public void OnJoinedRoom()
-    {
-        Debug.Log("*** JOINED ROOM SUCCESSFULLY! ***");
-        Debug.Log($"*** Room: {PhotonNetwork.CurrentRoom.Name} ***");
-        Debug.Log($"*** Players: {PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.MaxPlayers} ***");
-
-        foreach (var player in PhotonNetwork.PlayerList)
+        if (!PhotonNetwork.IsConnectedAndReady)
         {
-            Debug.Log($"*** Player: {player.NickName} (ID: {player.ActorNumber}) ***");
+            Debug.LogWarning("[Multiplayer] Not connected yet, connecting now...");
+            Connect();
+            return;
         }
 
-        Debug.Log("*** VOICE CHAT SHOULD INITIALIZE NOW! ***");
-    }
-
-    public void OnLeftRoom()
-    {
-        Debug.Log("*** LEFT ROOM ***");
-    }
-
-    public void OnCreateRoomFailed(short returnCode, string message)
-    {
-        Debug.LogError($"*** CREATE ROOM FAILED: {message} ({returnCode}) ***");
-    }
-
-    public void OnJoinRoomFailed(short returnCode, string message)
-    {
-        Debug.LogError($"*** JOIN ROOM FAILED: {message} ({returnCode}) ***");
-        Debug.LogError($"*** Make sure the room code '{manualRoomCode}' is correct! ***");
-
-        // 더 자세한 에러 정보
-        switch (returnCode)
+        if (!PhotonNetwork.InLobby)
         {
-            case 32758:
-                Debug.LogError("*** Room does not exist! Check the room code! ***");
-                break;
-            case 32764:
-                Debug.LogError("*** Room is full! ***");
-                break;
-        }
-    }
-
-    public void OnJoinRandomFailed(short returnCode, string message) { }
-
-    public void OnCreatedRoom()
-    {
-        Debug.Log("*** ROOM CREATED SUCCESSFULLY! ***");
-        Debug.Log($"*** Room Code: {PhotonNetwork.CurrentRoom.Name} ***");
-        lastCreatedRoomCode = PhotonNetwork.CurrentRoom.Name;
-        Debug.Log($"*** ========================================= ***");
-        Debug.Log($"*** SHARE THIS CODE WITH YOUR FRIEND: {lastCreatedRoomCode} ***");
-        Debug.Log($"*** ========================================= ***");
-    }
-
-    public void OnPlayerEnteredRoom(Player newPlayer)
-    {
-        Debug.Log($"*** PLAYER JOINED: {newPlayer.NickName} ***");
-        Debug.Log($"*** Total Players: {PhotonNetwork.CurrentRoom.PlayerCount} ***");
-    }
-
-    public void OnPlayerLeftRoom(Player otherPlayer)
-    {
-        Debug.Log($"*** PLAYER LEFT: {otherPlayer.NickName} ***");
-    }
-
-    public void OnMasterClientSwitched(Player newMasterClient) { }
-    public void OnFriendListUpdate(List<FriendInfo> friendList) { }
-
-    #endregion
-
-    #region Room Functions
-
-    public string CreateRoomWithCode()
-    {
-        if (!IsReadyToCreateRoom())
-        {
-            Debug.LogError("*** NOT READY TO CREATE ROOM! ***");
-            Debug.LogError($"Connected: {isConnectedToPhoton}, InLobby: {isInLobby}, InRoom: {PhotonNetwork.InRoom}");
-            return null;
+            Debug.LogWarning("[Multiplayer] Not in lobby yet, waiting...");
+            return;
         }
 
         string roomCode = GenerateRoomCode();
+
         RoomOptions options = new RoomOptions
         {
             MaxPlayers = (byte)maxPlayersPerRoom,
-            IsVisible = true,  
-            IsOpen = true,
-            PublishUserId = true  
+            IsVisible = true,
+            IsOpen = true
         };
 
-        Debug.Log($"*** CREATING ROOM: {roomCode} ***");
         PhotonNetwork.CreateRoom(roomCode, options);
-        return roomCode;
+        Debug.Log($"[Multiplayer] Creating room: {roomCode}");
     }
 
-    public bool JoinRoomWithCode(string roomCode)
+    public void JoinRoomWithCode(string roomCode)
     {
-        if (!IsReadyToJoinRoom())
+        if (!PhotonNetwork.IsConnectedAndReady)
         {
-            Debug.LogError("*** NOT READY TO JOIN ROOM! ***");
-            return false;
+            Debug.LogWarning("[Multiplayer] Not connected yet, connecting now...");
+            Connect();
+            return;
         }
 
-        if (string.IsNullOrEmpty(roomCode) || roomCode.Length != 6)
-        {
-            Debug.LogError("*** INVALID ROOM CODE! Must be 6 characters. ***");
-            return false;
-        }
+        if (string.IsNullOrEmpty(roomCode) || roomCode.Length != 6) return;
 
-        roomCode = roomCode.ToUpper();
-        Debug.Log($"*** JOINING ROOM: {roomCode} ***");
-        PhotonNetwork.JoinRoom(roomCode);
-        return true;
+        PhotonNetwork.JoinRoom(roomCode.ToUpper());
     }
 
-    private string GenerateRoomCode()
+    public void StartGame()
     {
-        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        string result = "";
-        for (int i = 0; i < 6; i++)
-        {
-            result += chars[Random.Range(0, chars.Length)];
-        }
-        return result;
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        //if (PhotonNetwork.CurrentRoom.PlayerCount < maxPlayersPerRoom)
+        //{
+        //    Debug.LogWarning($"[Multiplayer] Waiting for more players ({PhotonNetwork.CurrentRoom.PlayerCount}/{maxPlayersPerRoom})");
+        //    return;
+        //}
+
+        PhotonNetwork.LoadLevel("MultiplayerScene");
+    }
+
+    public void LeaveRoom()
+    {
+        PhotonNetwork.LeaveRoom();
     }
 
     #endregion
 
-    #region Status Methods
+    #region Helper Methods
 
-    public bool IsReadyToCreateRoom()
+    private string GenerateRoomCode()
     {
-        return isConnectedToPhoton && isInLobby && !PhotonNetwork.InRoom;
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        string code = "";
+
+        for (int i = 0; i < 6; i++)
+        {
+            code += chars[Random.Range(0, chars.Length)];
+        }
+
+        return code;
     }
 
-    public bool IsReadyToJoinRoom()
+    #endregion
+
+    #region Getters
+
+    public bool IsConnected()
     {
-        return isConnectedToPhoton && isInLobby && !PhotonNetwork.InRoom;
+        return PhotonNetwork.IsConnectedAndReady;
     }
 
-    public bool IsConnectedToPhoton()
+    public bool IsInLobby()
     {
-        return isConnectedToPhoton;
+        return PhotonNetwork.InLobby;
     }
 
     public bool IsInRoom()
@@ -305,6 +164,16 @@ public class Multiplayer : MonoBehaviour, IConnectionCallbacks, IMatchmakingCall
     public bool IsMasterClient()
     {
         return PhotonNetwork.IsMasterClient;
+    }
+
+    public string GetRoomCode()
+    {
+        return PhotonNetwork.InRoom ? PhotonNetwork.CurrentRoom.Name : "";
+    }
+
+    public int GetPlayerCount()
+    {
+        return PhotonNetwork.InRoom ? PhotonNetwork.CurrentRoom.PlayerCount : 0;
     }
 
     #endregion
