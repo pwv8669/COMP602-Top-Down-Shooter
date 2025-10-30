@@ -40,9 +40,15 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
     }
 
     // ===== PUBLIC API: Damage =====
-    public void TakeDamage(int damageAmount)
+    public void TakeDamage(int damageAmount, Vector3 hitPosition = default)
     {
         if (isDead) return;
+
+        // Instantiate the blood particle effect at the point of impact
+        if (bloodEffectPrefab != null && hitPosition != default)
+        {
+            Instantiate(bloodEffectPrefab, hitPosition, Quaternion.Euler(90, 0, 0));
+        }
 
         // MULTIPLAYER: Route all damage through MasterClient
         if (PhotonNetwork.IsConnected)

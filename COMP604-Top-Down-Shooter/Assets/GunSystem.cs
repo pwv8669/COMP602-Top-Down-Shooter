@@ -157,7 +157,7 @@ public class GunSystem : MonoBehaviourPunCallbacks
                 if (enemyHealth != null)
                 {
                     // MULTIPLAYER: Send damage (Health.cs handles routing)
-                    enemyHealth.TakeDamage(damage);
+                    enemyHealth.TakeDamage(damage, enemyHit.point);
                 }
             }
 
