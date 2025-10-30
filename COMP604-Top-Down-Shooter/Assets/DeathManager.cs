@@ -1,10 +1,15 @@
 using UnityEngine;
-using System.Collections; // Required for Coroutines
+using System.Collections;
+using Photon.Pun;
+using UnityEngine.SceneManagement;
 
-public class DeathManager : MonoBehaviour
+public class DeathManager : MonoBehaviourPunCallbacks
 {
     // A reference to the death screen's CanvasGroup
     public CanvasGroup deathScreenCanvasGroup;
+
+    // Scene name to return to
+    public string mainMenuSceneName = "MainMenu";
 
     // A static instance of the DeathManager to make it easily accessible
     public static DeathManager Instance { get; private set; }
@@ -45,7 +50,49 @@ public class DeathManager : MonoBehaviour
             yield return null;
         }
 
-        // Optional: After fading in, you could load the main menu or allow a restart
-        // For example: UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        // After fading in, return to main menu
+        Debug.Log("Death screen fade complete. Returning to main menu...");
+        yield return new WaitForSeconds(10f); // Optional: brief pause before returning
+        ReturnToMainMenu();
+    }
+
+    private void ReturnToMainMenu()
+    {
+        Debug.Log("Returning to main menu...");
+
+        // Disconnect from Photon if connected
+        if (PhotonNetwork.IsConnected)
+        {
+            Debug.Log("Disconnecting from Photon...");
+            PhotonNetwork.Disconnect();
+        }
+
+        // Load main menu scene
+        StartCoroutine(LoadMainMenuScene());
+    }
+
+    private IEnumerator LoadMainMenuScene()
+    {
+        // Wait for Photon to disconnect if it was connected
+        if (PhotonNetwork.IsConnected)
+        {
+            float timeout = 3f;
+            float elapsed = 0f;
+
+            while (PhotonNetwork.IsConnected && elapsed < timeout)
+            {
+                yield return new WaitForSeconds(0.1f);
+                elapsed += 0.1f;
+            }
+
+            if (PhotonNetwork.IsConnected)
+            {
+                Debug.LogWarning("Timeout waiting for disconnect, loading anyway...");
+            }
+        }
+
+        // Load the main menu scene
+        Debug.Log($"Loading scene: {mainMenuSceneName}");
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 }
