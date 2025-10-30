@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+using System.Collections;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
@@ -9,19 +10,55 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void Start()
     {
+        if (!PhotonNetwork.IsConnected)
+        {
+            Debug.LogError("[GameManager] Photon Network is not connected!");
+            return;
+        }
+
+        // Wait for Photon to be fully ready before spawning
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            Debug.LogError("[GameManager] Photon Network is not ready!");
+            Debug.Log("[GameManager] Waiting for Photon to be ready...");
+            StartCoroutine(WaitForPhotonReady());
             return;
         }
 
         SpawnPlayer();
     }
 
+    /// <summary>
+    /// Wait for Photon to be fully ready before spawning player
+    /// This prevents timing issues when loading scenes
+    /// </summary>
+    IEnumerator WaitForPhotonReady()
+    {
+        float timeout = 10f;
+        float elapsed = 0f;
+
+        while (!PhotonNetwork.IsConnectedAndReady && elapsed < timeout)
+        {
+            yield return new WaitForSeconds(0.1f);
+            elapsed += 0.1f;
+        }
+
+        if (PhotonNetwork.IsConnectedAndReady)
+        {
+            Debug.Log("[GameManager] Photon ready! Spawning player...");
+            SpawnPlayer();
+        }
+        else
+        {
+            Debug.LogError("[GameManager] Timeout waiting for Photon to be ready!");
+        }
+    }
+
     void SpawnPlayer()
     {
         // Determine spawn position based on player number
         Vector3 spawnPos = PhotonNetwork.IsMasterClient ? player1SpawnPos : player2SpawnPos;
+
+        Debug.Log($"[GameManager] Spawning player at {spawnPos} (IsMasterClient: {PhotonNetwork.IsMasterClient})");
 
         // Instantiate player
         GameObject player = PhotonNetwork.Instantiate("Character", spawnPos, Quaternion.identity);

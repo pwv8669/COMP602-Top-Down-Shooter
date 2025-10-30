@@ -110,8 +110,12 @@ public class Multiplayer : MonoBehaviourPunCallbacks
     public void StartGame()
     {
         if (!PhotonNetwork.IsMasterClient) return;
-        //if (!PhotonNetwork.IsMasterClient) return;
-        //if (PhotonNetwork.CurrentRoom.PlayerCount < 2) return;
+
+        //if (PhotonNetwork.CurrentRoom.PlayerCount < maxPlayersPerRoom)
+        //{
+        //    Debug.LogWarning($"[Multiplayer] Waiting for more players ({PhotonNetwork.CurrentRoom.PlayerCount}/{maxPlayersPerRoom})");
+        //    return;
+        //}
 
         PhotonNetwork.LoadLevel("MultiplayerScene");
     }
