@@ -1,6 +1,7 @@
 using UnityEngine;
+using Photon.Pun;
 
-public class SpeedPotion : MonoBehaviour
+public class SpeedPotion : MonoBehaviourPunCallbacks
 {
     public float speedMultiplier = 2.0f;
     public float effectDuration = 10f;
@@ -15,22 +16,60 @@ public class SpeedPotion : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        PhotonView playerPV = other.GetComponent<PhotonView>();
+
+        if (playerPV != null && playerPV.IsMine)
         {
             Character playerController = other.GetComponent<Character>();
 
             if (playerController != null)
             {
                 playerController.ActivateSpeedBoost(speedMultiplier, effectDuration);
-                
-                // Notify the spawner if we have a reference
+
                 if (spawner != null)
                 {
                     spawner.PotionCollected();
                 }
-                
-                Destroy(gameObject);
+
+                DestroyPotion();
             }
         }
+    }
+
+    private void DestroyPotion()
+    {
+        PhotonView pv = GetComponent<PhotonView>();
+
+        if (PhotonNetwork.IsConnected && pv != null)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                Debug.Log("[SpeedPotion] Host destroying potion");
+                PhotonNetwork.Destroy(gameObject);
+            }
+            else
+            {
+                Debug.Log("[SpeedPotion] Client requesting host to destroy");
+                pv.RPC("RPC_CollectPotion", RpcTarget.MasterClient);
+            }
+        }
+        else
+        {
+            Debug.Log("[SpeedPotion] Singleplayer - normal destroy");
+            Destroy(gameObject);
+        }
+    }
+
+    [PunRPC]
+    private void RPC_CollectPotion()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            Debug.LogWarning("[SpeedPotion] RPC called on non-host!");
+            return;
+        }
+
+        Debug.Log("[SpeedPotion] Host received collection request - destroying");
+        PhotonNetwork.Destroy(gameObject);
     }
 }

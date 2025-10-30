@@ -437,6 +437,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   maxHealth: 100
+  isPlayer: 0
+  bloodEffectPrefab: {fileID: 0}
 --- !u!114 &6572178757031553562
 MonoBehaviour:
   m_ObjectHideFlags: 0

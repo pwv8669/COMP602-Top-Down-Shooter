@@ -162,10 +162,6 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void SetupRemotePlayer(GameObject player)
     {
-        // Disable input components for remote players
-        Character character = player.GetComponent<Character>();
-        if (character != null) character.enabled = false;
-
         PlayerLookAtMouse lookAtMouse = player.GetComponent<PlayerLookAtMouse>();
         if (lookAtMouse != null) lookAtMouse.enabled = false;
 
