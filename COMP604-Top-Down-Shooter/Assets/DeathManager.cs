@@ -50,16 +50,10 @@ public class DeathManager : MonoBehaviourPunCallbacks
             yield return null;
         }
 
-<<<<<<< HEAD
         // After fading in, wait 10 seconds before returning to main menu
         Debug.Log("Death screen fade complete. Waiting 10 seconds...");
         yield return new WaitForSeconds(10f); // Wait 10 seconds
         Debug.Log("Returning to main menu...");
-=======
-        // After fading in, return to main menu
-        Debug.Log("Death screen fade complete. Returning to main menu...");
-        yield return new WaitForSeconds(10f); // Optional: brief pause before returning
->>>>>>> 32c92a1050e01f958c4b63ff0d7dda315785418a
         ReturnToMainMenu();
     }
 
