@@ -6,7 +6,9 @@ Top Down Shooter is as the name suggests, a top down shooter maade with Unity.
 
 1. Clone the repository to your device from https://github.com/pwv8669/COMP602-Top-Down-Shooter.
 
-2. File -> Build and Run
+2. Open the project in Unity.
+
+3. File -> Build and Run.
 
 
 ## Usage
