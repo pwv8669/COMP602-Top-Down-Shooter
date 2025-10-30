@@ -4,7 +4,7 @@
 QualitySettings:
   m_ObjectHideFlags: 0
   serializedVersion: 5
-  m_CurrentQuality: 2
+  m_CurrentQuality: 1
   m_QualitySettings:
   - serializedVersion: 4
     name: Low
@@ -163,23 +163,4 @@ QualitySettings:
     terrainMaxTrees: 50
     excludedTargetPlatforms: []
   m_TextureMipmapLimitGroupNames: []
-  m_PerPlatformDefaultQuality:
-    Android: 1
-    EmbeddedLinux: 2
-    GameCoreScarlett: 2
-    GameCoreXboxOne: 2
-    Kepler: 2
-    LinuxHeadlessSimulation: 2
-    Nintendo Switch: 2
-    PS4: 2
-    PS5: 2
-    QNX: 2
-    ReservedCFE: 2
-    Server: 2
-    Standalone: 2
-    VisionOS: 2
-    WebGL: 2
-    Windows Store Apps: 2
-    XboxOne: 2
-    iPhone: 1
-    tvOS: 1
+  m_PerPlatformDefaultQuality: {}
