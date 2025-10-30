@@ -196,6 +196,12 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
                 // PLAYER: Only owner destroys their own player
                 if (pv.IsMine)
                 {
+                    // Show death screen for local player only
+                    if (DeathManager.Instance != null)
+                    {
+                        DeathManager.Instance.ShowDeathScreen();
+                    }
+
                     photonView.RPC(nameof(RPC_Die), RpcTarget.AllBuffered);
                     Invoke(nameof(DestroyPlayer), 0.1f);
                 }
@@ -213,8 +219,26 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
         else
         {
             // SINGLEPLAYER MODE: Direct death
+            if (CompareTag("Player"))
+            {
+                // Show death screen in singleplayer
+                if (DeathManager.Instance != null)
+                {
+                    DeathManager.Instance.ShowDeathScreen();
+                }
+            }
+
             RPC_Die();
-            Destroy(gameObject);
+
+            // Delay destruction so death screen can show
+            if (CompareTag("Player"))
+            {
+                Invoke(nameof(DestroySingleplayer), 0.1f);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
     }
 
@@ -240,6 +264,11 @@ public class Health : MonoBehaviourPunCallbacks, IPunObservable
         {
             PhotonNetwork.Destroy(gameObject);
         }
+    }
+
+    private void DestroySingleplayer()
+    {
+        Destroy(gameObject);
     }
 
     // ===== PHOTON: Continuous sync for health value =====
