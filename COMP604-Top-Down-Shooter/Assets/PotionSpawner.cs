@@ -97,6 +97,8 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
                 instantiationData
             );
 
+            potion.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+
             Debug.Log($"[MULTIPLAYER] Spawned potion via PhotonNetwork: {potionPrefabName} at {spawnPosition}");
         }
         else
@@ -108,6 +110,8 @@ public class PotionSpawner : MonoBehaviourPunCallbacks
                 return;
             }
             potion = Instantiate(prefab, spawnPosition, Quaternion.identity);
+
+            potion.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
             HealthPotion healthPotion = potion.GetComponent<HealthPotion>();
             if (healthPotion != null)

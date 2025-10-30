@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: 04b650f1c6e934cfb940abb25447131c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - smallHealthPotionPrefab: {fileID: 4479308578893227201, guid: f6c988cb81a72ec4cb008094fb5e766a, type: 3}
+  - largeHealthPotionPrefab: {fileID: 4479308578893227201, guid: f6c988cb81a72ec4cb008094fb5e766a, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

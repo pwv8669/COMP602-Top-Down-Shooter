@@ -69,6 +69,9 @@ public class SpeedPotionSpawner : MonoBehaviourPunCallbacks
         if (PhotonNetwork.IsConnected)
         {
             newPotion = PhotonNetwork.Instantiate(SPEED_POTION_NAME, spawnPosition, Quaternion.identity);
+
+            newPotion.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+
             Debug.Log($"[MULTIPLAYER] Spawned speed potion via PhotonNetwork at {spawnPosition}");
         }
         else
@@ -80,6 +83,8 @@ public class SpeedPotionSpawner : MonoBehaviourPunCallbacks
             }
 
             newPotion = Instantiate(speedPotionPrefab, spawnPosition, Quaternion.identity);
+            newPotion.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+
         }
 
         SpeedPotion potionScript = newPotion.GetComponent<SpeedPotion>();
